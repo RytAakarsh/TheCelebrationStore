@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { SafeImage } from "@/components/shop/SafeImage";
 import { Link } from "@tanstack/react-router";
 import Autoplay from "embla-carousel-autoplay";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -27,7 +28,7 @@ export function HeroCarousel() {
               <CarouselItem key={b.id}>
                 <div className="relative overflow-hidden rounded-2xl bg-ink">
                   {image && (
-                    <img
+                    <SafeImage
                       src={image}
                       alt={b.heading ?? "Vizag Party World offer"}
                       className="aspect-[16/10] w-full object-cover sm:aspect-[21/8]"

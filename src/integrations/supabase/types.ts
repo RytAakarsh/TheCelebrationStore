@@ -242,6 +242,45 @@ export type Database = {
         }
         Relationships: []
       }
+      home_section_products: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          product_id: string
+          section_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          product_id: string
+          section_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          product_id?: string
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_section_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_section_products_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "home_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_sections: {
         Row: {
           category_id: string | null
@@ -249,9 +288,11 @@ export type Database = {
           id: string
           is_active: boolean
           key: string
+          max_items: number
           source: string
           subtitle: string | null
           title: string
+          updated_at: string
         }
         Insert: {
           category_id?: string | null
@@ -259,9 +300,11 @@ export type Database = {
           id?: string
           is_active?: boolean
           key: string
+          max_items?: number
           source?: string
           subtitle?: string | null
           title: string
+          updated_at?: string
         }
         Update: {
           category_id?: string | null
@@ -269,9 +312,11 @@ export type Database = {
           id?: string
           is_active?: boolean
           key?: string
+          max_items?: number
           source?: string
           subtitle?: string | null
           title?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -955,7 +1000,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_first_admin: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
