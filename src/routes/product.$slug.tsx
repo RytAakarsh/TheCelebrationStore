@@ -293,12 +293,12 @@ function ProductPage() {
               {(reviews ?? []).map((r) => (
                 <div key={r.id} className="card-product p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold">{r.customer_name ?? "Customer"}</span>
+                    <span className="text-sm font-semibold">{"Verified Customer"}</span>
                     <span className="text-xs text-muted-foreground">{formatDayIST(r.created_at)}</span>
                   </div>
                   <StarRating value={Number(r.rating)} className="mt-1" />
                   {r.title && <p className="mt-1 text-sm font-semibold">{r.title}</p>}
-                  {r.comment && <p className="mt-1 text-sm text-muted-foreground">{r.comment}</p>}
+                  {r.body && <p className="mt-1 text-sm text-muted-foreground">{r.body}</p>}
                 </div>
               ))}
             </TabsContent>
