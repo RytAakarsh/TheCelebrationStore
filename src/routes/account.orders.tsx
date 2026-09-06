@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SafeImage } from "@/components/shop/SafeImage";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +57,7 @@ function MyOrders() {
             {(order.order_items ?? []).map((item) => (
               <li key={item.id} className="flex items-center gap-3">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
-                  {item.image_url && <img src={item.image_url} alt="" className="h-full w-full object-contain p-1" />}
+                  {item.image_url && <SafeImage src={item.image_url} alt="" className="h-full w-full object-contain p-1" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{item.product_name}</p>

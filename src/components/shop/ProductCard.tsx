@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { SafeImage } from "@/components/shop/SafeImage";
 import { Heart, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./StarRating";
@@ -67,13 +68,13 @@ export function ProductCard({ product, className }: { product: CardProduct; clas
         <div className="relative aspect-square overflow-hidden bg-secondary">
           {primary ? (
             <>
-              <img
+              <SafeImage
                 src={primary}
                 alt={product.name}
                 loading="lazy"
                 className="h-full w-full object-contain p-3 transition-opacity duration-300 group-hover:opacity-0"
               />
-              <img
+              <SafeImage
                 src={secondary ?? primary}
                 alt=""
                 aria-hidden

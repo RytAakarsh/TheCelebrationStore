@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SafeImage } from "@/components/shop/SafeImage";
 import { useQuery } from "@tanstack/react-query";
 import { ShopLayout, PageHeader } from "@/components/shop/ShopLayout";
 import { categoriesQuery } from "@/lib/queries";
@@ -32,7 +33,7 @@ function CategoriesPage() {
                 <div className="flex items-center gap-3">
                   <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary text-2xl">
                     {c.image_url ? (
-                      <img src={c.image_url} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
+                      <SafeImage src={c.image_url} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
                     ) : (
                       <span aria-hidden>{c.icon ?? "🎉"}</span>
                     )}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SafeImage } from "@/components/shop/SafeImage";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShopLayout, PageHeader, EmptyState } from "@/components/shop/ShopLayout";
@@ -73,7 +74,7 @@ function CartPage() {
             return (
               <li key={row.id} className="card-product flex gap-3 p-3">
                 <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-secondary">
-                  {image && <img src={image} alt={row.products?.name ?? ""} className="h-full w-full object-contain p-1" />}
+                  {image && <SafeImage src={image} alt={row.products?.name ?? ""} className="h-full w-full object-contain p-1" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <Link

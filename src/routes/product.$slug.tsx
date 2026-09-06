@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SafeImage } from "@/components/shop/SafeImage";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, Minus, MessageCircle, Plus, ShieldCheck, Truck } from "lucide-react";
@@ -118,7 +119,7 @@ function ProductPage() {
         <div>
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {images[active] ? (
-              <img src={images[active]} alt={product.name} className="aspect-square w-full object-contain p-4" />
+              <SafeImage src={images[active]} alt={product.name} className="aspect-square w-full object-contain p-4" />
             ) : (
               <div className="grid aspect-square place-items-center text-sm text-muted-foreground">No image</div>
             )}
@@ -136,7 +137,7 @@ function ProductPage() {
                     i === active ? "border-gold" : "border-border",
                   )}
                 >
-                  <img src={url} alt="" className="h-full w-full object-contain p-1" />
+                  <SafeImage src={url} alt="" className="h-full w-full object-contain p-1" />
                 </button>
               ))}
             </div>
