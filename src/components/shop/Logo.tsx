@@ -1,16 +1,19 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/vpw-logo.png.asset.json";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
+import { SafeImage } from "@/components/shop/SafeImage";
+
+export const LOGO_SRC = "/assets/vpw-logo.png";
 
 export function Logo({ className, size = 44 }: { className?: string; size?: number }) {
   return (
     <Link to="/" aria-label={`${BRAND.name} home`} className={cn("flex shrink-0 items-center gap-2", className)}>
-      <img
-        src={logo.url}
+      <SafeImage
+        src={LOGO_SRC}
         alt={`${BRAND.name} logo`}
         width={size}
         height={size}
+        loading="eager"
         className="rounded-lg object-contain"
         style={{ width: size, height: size }}
       />
