@@ -49,7 +49,11 @@ function AdminLogin() {
   };
 
   const forgot = async () => {
-    if (!email.trim()) return toast.error("Enter your admin email first");
+    if (!email.trim()) {
+      toast.error("Enter your admin email first");
+      return;
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/reset-password`,
     });
