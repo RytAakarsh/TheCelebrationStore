@@ -191,17 +191,18 @@ export const offerProductsQuery = () =>
   });
 
 export type ProductFilters = {
-  categorySlug?: string;
-  subcategorySlug?: string;
-  search?: string;
-  sort?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  inStockOnly?: boolean;
-  minDiscount?: number;
-  badge?: string;
-  limit?: number;
+  categorySlug?: string | undefined;
+  subcategorySlug?: string | undefined;
+  search?: string | undefined;
+  sort?: string | undefined;
+  minPrice?: number | undefined;
+  maxPrice?: number | undefined;
+  inStockOnly?: boolean | undefined;
+  minDiscount?: number | undefined;
+  badge?: string | undefined;
+  limit?: number | undefined;
 };
+
 
 export const productsQuery = (filters: ProductFilters = {}) =>
   queryOptions({
