@@ -65,9 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .upsert(
         {
           id: u.id,
-          email: u.email,
-          full_name: (u.user_metadata?.full_name as string) ?? (u.user_metadata?.name as string) ?? null,
-          avatar_url: (u.user_metadata?.avatar_url as string) ?? null,
+          email: u.email ?? null,
+          full_name:
+            (u.user_metadata?.["full_name"] as string) ?? (u.user_metadata?.["name"] as string) ?? null,
+          avatar_url: (u.user_metadata?.["avatar_url"] as string) ?? null,
           last_login_at: new Date().toISOString(),
         },
         { onConflict: "id" },

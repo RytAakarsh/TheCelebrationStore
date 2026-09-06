@@ -66,12 +66,14 @@ export function useCart() {
   const add = useMutation({
     mutationFn: async (input: { productId: string; variantId?: string | null; quantity: number }) => {
       if (!user) throw new Error("Please sign in to add items to your cart.");
-      const { data: existing } = await supabase
+      let existingQuery = supabase
         .from("cart_items")
         .select("id,quantity")
-        .eq("product_id", input.productId)
-        .eq("variant_id", input.variantId ?? null)
-        .maybeSingle();
+        .eq("product_id", input.productId);
+      existingQuery = input.variantId
+        ? existingQuery.eq("variant_id", input.variantId)
+        : existingQuery.is("variant_id", null);
+      const { data: existing } = await existingQuery.maybeSingle();
       if (existing) {
         const { error } = await supabase
           .from("cart_items")
