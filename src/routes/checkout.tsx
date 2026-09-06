@@ -81,8 +81,14 @@ function CheckoutPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isValidIndianPhone(form.phone)) return toast.error("Enter a valid 10-digit mobile number.");
-    if (!isValidPincode(form.pincode)) return toast.error("Enter a valid 6-digit PIN code.");
+    if (!isValidIndianPhone(form.phone)) {
+      toast.error("Enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!isValidPincode(form.pincode)) {
+      toast.error("Enter a valid 6-digit PIN code.");
+      return;
+    }
     setBusy(true);
     try {
       const result = await submitOrder({
