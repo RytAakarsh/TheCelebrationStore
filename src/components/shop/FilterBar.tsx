@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 
 export type ShopFilterState = {
   sort: string;
-  minPrice?: number;
-  maxPrice?: number;
-  inStockOnly?: boolean;
-  minDiscount?: number;
+  minPrice?: number | undefined;
+  maxPrice?: number | undefined;
+  inStockOnly?: boolean | undefined;
+  minDiscount?: number | undefined;
 };
+
 
 const SORTS = [
   { value: "relevance", label: "Recommended" },
