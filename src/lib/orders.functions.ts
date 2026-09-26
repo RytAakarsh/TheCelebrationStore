@@ -28,7 +28,7 @@ const placeOrderSchema = z.object({
  */
 export const placeOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => placeOrderSchema.parse(data))
+  .validator((data: unknown) => placeOrderSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -220,7 +220,7 @@ export const placeOrder = createServerFn({ method: "POST" })
 
 export const validateCoupon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ code: z.string().trim().min(1).max(40) }).parse(data))
+  .validator((data: unknown) => z.object({ code: z.string().trim().min(1).max(40) }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: cart } = await supabase

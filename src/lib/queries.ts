@@ -190,6 +190,24 @@ export const offerProductsQuery = () =>
     staleTime: 60 * 1000,
   });
 
+export const liveOffersQuery = () =>
+  queryOptions({
+    queryKey: ["live_offers"],
+    queryFn: async () => {
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order");
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter(
+        (o) => (!o.starts_at || o.starts_at <= nowIso) && (!o.ends_at || o.ends_at >= nowIso),
+      );
+    },
+    staleTime: 60 * 1000,
+  });
+
 export type ProductFilters = {
   categorySlug?: string | undefined;
   subcategorySlug?: string | undefined;

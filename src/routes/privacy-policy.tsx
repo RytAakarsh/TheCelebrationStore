@@ -5,10 +5,10 @@ import { BRAND } from "@/lib/brand";
 export const Route = createFileRoute("/privacy-policy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Vizag Party World" },
-      { name: "description", content: "How Vizag Party World collects, uses and protects your personal information." },
-      { property: "og:title", content: "Privacy Policy — Vizag Party World" },
-      { property: "og:description", content: "Your data and how we protect it." },
+      { title: `Privacy Policy — ${BRAND.name}` },
+      { name: "description", content: `How ${BRAND.name} collects, uses and protects your personal information.` },
+      { property: "og:title", content: `Privacy Policy — ${BRAND.name}` },
+      { property: "og:description", content: "Your data privacy and how we protect it." },
     ],
   }),
   component: () => (
@@ -16,20 +16,24 @@ export const Route = createFileRoute("/privacy-policy")({
       title="Privacy Policy"
       sections={[
         {
-          heading: "Information we collect",
-          body: "We collect your name, email, phone number and delivery address so we can process and deliver your orders.",
+          heading: "1. Information We Collect",
+          body: `When you browse, register, or place an order at ${BRAND.name}, we collect personal information such as your name, phone number, email address, and delivery location. We do not store sensitive credit card or net banking credentials on our servers.`,
         },
         {
-          heading: "How we use it",
-          body: "Your details are used only for order processing, delivery, customer support and order-related communication.",
+          heading: "2. Purpose of Data Collection",
+          body: "We use your details strictly to fulfill orders, process payments, provide delivery updates via SMS/WhatsApp, provide customer service, and occasionally notify you about festive collections if you opt-in.",
         },
         {
-          heading: "Data protection",
-          body: "Your account data is stored securely and is accessible only to you and our authorised store team.",
+          heading: "3. Data Security & Storage",
+          body: "We implement robust industry-standard encryption and security protocols via Supabase PostgreSQL and secure authentication tokens. Your personal data is never sold or rented to third-party marketing companies.",
         },
         {
-          heading: "Contact",
-          body: `For privacy requests, email ${BRAND.email} or call ${BRAND.phoneDisplay}.`,
+          heading: "4. Third-Party Service Providers",
+          body: "We may share relevant delivery details (such as address and phone number) with verified local delivery partners and courier agencies solely to complete doorstep delivery of your celebrations.",
+        },
+        {
+          heading: "5. Contacting Us About Privacy",
+          body: `If you wish to update, review, or delete your account information, please contact our data privacy officer at ${BRAND.email} or call +91 ${BRAND.phone}.`,
         },
       ]}
     />

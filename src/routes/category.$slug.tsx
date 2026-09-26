@@ -5,6 +5,7 @@ import { ShopLayout, PageHeader } from "@/components/shop/ShopLayout";
 import { ProductGrid } from "@/components/shop/ProductGrid";
 import { FilterBar, type ShopFilterState } from "@/components/shop/FilterBar";
 import { categoriesQuery, productsQuery } from "@/lib/queries";
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type CategorySearch = { sub?: string };
@@ -16,10 +17,10 @@ export const Route = createFileRoute("/category/$slug")({
     const pretty = params.slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
     return {
       meta: [
-        { title: `${pretty} — Vizag Party World` },
-        { name: "description", content: `Shop ${pretty} online from Vizag Party World, Visakhapatnam.` },
-        { property: "og:title", content: `${pretty} — Vizag Party World` },
-        { property: "og:description", content: `Celebration essentials in ${pretty}.` },
+        { title: `${pretty} — ${BRAND.name}` },
+        { name: "description", content: `Shop premium ${pretty} online from ${BRAND.name}, Visakhapatnam.` },
+        { property: "og:title", content: `${pretty} — ${BRAND.name}` },
+        { property: "og:description", content: `Celebration essentials & party supplies in ${pretty}.` },
       ],
     };
   },
@@ -39,24 +40,32 @@ function CategoryPage() {
 
   return (
     <ShopLayout>
-      <nav aria-label="Breadcrumb" className="container-page pt-3 text-xs text-muted-foreground">
-        <Link to="/" className="hover:text-pink">Home</Link> / <Link to="/categories" className="hover:text-pink">Categories</Link> /{" "}
-        <span className="text-foreground">{category?.name ?? slug}</span>
+      <nav aria-label="Breadcrumb" className="container-page pt-4 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-gold">Home</Link>
+        <span className="mx-2">/</span>
+        <Link to="/categories" className="hover:text-gold">Categories</Link>
+        <span className="mx-2">/</span>
+        <span className="text-foreground font-medium">{category?.name ?? slug}</span>
       </nav>
-      <PageHeader title={category?.name ?? "Category"} {...(category?.description ? { subtitle: category.description } : {})} />
+      <PageHeader
+        title={category?.name ?? "Category"}
+        {...(category?.description ? { subtitle: category.description } : { subtitle: `Explore our collection of ${category?.name ?? slug}` })}
+      />
 
       <div className="container-page py-5">
         {!!category?.subcategories?.length && (
-          <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               type="button"
               onClick={() => navigate({ to: "/category/$slug", params: { slug }, search: {} })}
               className={cn(
-                "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold",
-                !sub ? "border-pink bg-pink text-primary-foreground" : "border-border",
+                "whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
+                !sub
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "border border-border bg-background hover:bg-secondary",
               )}
             >
-              All
+              All {category.name}
             </button>
             {category.subcategories
               .filter((s) => s.is_active)
@@ -66,8 +75,10 @@ function CategoryPage() {
                   type="button"
                   onClick={() => navigate({ to: "/category/$slug", params: { slug }, search: { sub: s.slug } })}
                   className={cn(
-                    "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold",
-                    sub === s.slug ? "border-pink bg-pink text-primary-foreground" : "border-border",
+                    "whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
+                    sub === s.slug
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "border border-border bg-background hover:bg-secondary",
                   )}
                 >
                   {s.name}

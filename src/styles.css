@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -5,9 +6,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Vizag Party World design system.
- * Dark, gold-trimmed brand chrome + clean light shopping surfaces
- * with festive pink / purple / blue / orange accents.
+ * The Celebration Store Design System.
+ * Warm, luxurious celebration aesthetic: Deep Navy chrome, Warm White surfaces,
+ * Champagne Gold accents, Celebration Pink & Festive accents.
  */
 
 @theme inline {
@@ -19,8 +20,8 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "DM Serif Display", "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -46,8 +47,10 @@
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-gold: var(--gold);
+  --color-gold-premium: var(--gold-premium);
   --color-gold-foreground: var(--gold-foreground);
   --color-pink: var(--pink);
+  --color-pink-soft: var(--pink-soft);
   --color-purple: var(--purple);
   --color-blue: var(--blue);
   --color-orange: var(--orange);
@@ -55,9 +58,9 @@
   --color-success: var(--success);
 
   --color-chart-1: var(--pink);
-  --color-chart-2: var(--purple);
-  --color-chart-3: var(--blue);
-  --color-chart-4: var(--gold);
+  --color-chart-2: var(--gold);
+  --color-chart-3: var(--purple);
+  --color-chart-4: var(--blue);
   --color-chart-5: var(--orange);
 
   --color-sidebar: var(--sidebar);
@@ -71,76 +74,81 @@
 }
 
 :root {
-  --radius: 0.9rem;
+  --radius: 0.85rem;
 
-  --ink: oklch(0.145 0 0);
-  --ink-soft: oklch(0.21 0.005 285);
-  --cream: oklch(0.985 0.008 70);
+  /* Brand Palette from official logo */
+  --ink: #101827;
+  --ink-soft: #1f2937;
+  --cream: #FFF7EC;
+  --warm-white: #FFFDF9;
 
-  --gold: oklch(0.79 0.145 84);
-  --gold-foreground: oklch(0.16 0.02 60);
-  --pink: oklch(0.64 0.238 4);
-  --purple: oklch(0.55 0.26 295);
-  --blue: oklch(0.63 0.17 250);
-  --orange: oklch(0.71 0.19 51);
-  --success: oklch(0.6 0.14 155);
+  --gold: #D9A441;
+  --gold-premium: #F4C45F;
+  --gold-foreground: #2A1D05;
 
-  --background: oklch(0.985 0.008 70);
-  --foreground: oklch(0.18 0.01 60);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 60);
+  --pink: #F05A78;
+  --pink-soft: #FFE4EA;
 
-  --primary: oklch(0.64 0.238 4);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.955 0.012 70);
-  --secondary-foreground: oklch(0.22 0.01 60);
-  --muted: oklch(0.955 0.012 70);
-  --muted-foreground: oklch(0.52 0.015 65);
-  --accent: oklch(0.79 0.145 84);
-  --accent-foreground: oklch(0.16 0.02 60);
-  --destructive: oklch(0.58 0.23 27);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0.012 70);
-  --input: oklch(0.9 0.012 70);
-  --ring: oklch(0.79 0.145 84);
+  --purple: #8E6CCF;
+  --blue: #4EA8DE;
+  --orange: #F97316;
+  --success: #10B981;
 
-  --sidebar: oklch(0.19 0.005 285);
-  --sidebar-foreground: oklch(0.96 0.005 70);
-  --sidebar-primary: oklch(0.79 0.145 84);
-  --sidebar-primary-foreground: oklch(0.16 0.02 60);
-  --sidebar-accent: oklch(0.26 0.01 285);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.79 0.145 84);
+  --background: #FFFDF9;
+  --foreground: #172033;
+  --card: #FFFFFF;
+  --card-foreground: #172033;
+  --popover: #FFFFFF;
+  --popover-foreground: #172033;
 
-  --gradient-festive: linear-gradient(
-    100deg,
-    var(--pink) 0%,
-    var(--purple) 45%,
-    var(--blue) 100%
-  );
-  --gradient-gold: linear-gradient(100deg, oklch(0.86 0.12 90), var(--gold));
-  --gradient-ink: linear-gradient(160deg, oklch(0.16 0 0), oklch(0.24 0.02 300));
-  --shadow-card: 0 1px 2px oklch(0.2 0 0 / 6%), 0 8px 24px -12px oklch(0.2 0 0 / 18%);
-  --shadow-lift: 0 12px 34px -14px oklch(0.2 0 0 / 30%);
-  --shadow-gold: 0 10px 30px -12px color-mix(in oklab, var(--gold) 55%, transparent);
+  --primary: #F05A78;
+  --primary-foreground: #FFFFFF;
+  --secondary: #FFF7EC;
+  --secondary-foreground: #1F2937;
+  --muted: #F3F4F6;
+  --muted-foreground: #687083;
+  --accent: #D9A441;
+  --accent-foreground: #101827;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #D9A441;
+
+  --sidebar: #101827;
+  --sidebar-foreground: #F9FAFB;
+  --sidebar-primary: #D9A441;
+  --sidebar-primary-foreground: #101827;
+  --sidebar-accent: #1F2937;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #D9A441;
+
+  --gradient-festive: linear-gradient(135deg, #F05A78 0%, #8E6CCF 50%, #4EA8DE 100%);
+  --gradient-gold: linear-gradient(135deg, #F4C45F 0%, #D9A441 100%);
+  --gradient-gold-subtle: linear-gradient(135deg, #FFFDF9 0%, #FFF7EC 100%);
+  --gradient-ink: linear-gradient(160deg, #101827 0%, #1E293B 100%);
+  --gradient-hero: linear-gradient(135deg, rgba(16, 24, 39, 0.85) 0%, rgba(30, 41, 59, 0.4) 100%);
+
+  --shadow-card: 0 2px 4px rgba(16, 24, 39, 0.04), 0 10px 24px -8px rgba(16, 24, 39, 0.08);
+  --shadow-lift: 0 16px 36px -10px rgba(16, 24, 39, 0.14);
+  --shadow-gold: 0 10px 25px -8px rgba(217, 164, 65, 0.4);
+  --shadow-pink: 0 10px 25px -8px rgba(240, 90, 120, 0.4);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.97 0.005 70);
-  --card: oklch(0.19 0.005 285);
-  --card-foreground: oklch(0.97 0.005 70);
-  --popover: oklch(0.19 0.005 285);
-  --popover-foreground: oklch(0.97 0.005 70);
-  --secondary: oklch(0.26 0.01 285);
-  --secondary-foreground: oklch(0.97 0.005 70);
-  --muted: oklch(0.26 0.01 285);
-  --muted-foreground: oklch(0.72 0.012 70);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
+  --background: #0D1117;
+  --foreground: #F3F4F6;
+  --card: #161B22;
+  --card-foreground: #F3F4F6;
+  --popover: #161B22;
+  --popover-foreground: #F3F4F6;
+  --secondary: #21262D;
+  --secondary-foreground: #F3F4F6;
+  --muted: #21262D;
+  --muted-foreground: #9CA3AF;
+  --border: #30363D;
+  --input: #30363D;
 }
 
 @layer base {
@@ -165,8 +173,7 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
 
   :focus-visible {
@@ -187,12 +194,20 @@
 
 @utility surface-ink {
   background-image: var(--gradient-ink);
-  color: oklch(0.97 0.005 70);
+  color: #FFFFFF;
 }
 
 @utility text-festive {
   background-image: var(--gradient-festive);
   background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility text-gold-gradient {
+  background-image: var(--gradient-gold);
+  background-clip: text;
+  -webkit-background-clip: text;
   color: transparent;
 }
 
@@ -205,9 +220,7 @@
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
-  transition:
-    box-shadow 0.25s ease,
-    transform 0.25s ease;
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 }
 
 @utility card-product-hover {
@@ -215,6 +228,7 @@
     &:hover {
       box-shadow: var(--shadow-lift);
       transform: translateY(-3px);
+      border-color: rgba(217, 164, 65, 0.4);
     }
   }
 }
@@ -231,17 +245,22 @@
 }
 
 @keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  45% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 @utility animate-pop {
   animation: pop 0.32s ease-out;
+}
+
+@utility shimmer-effect {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }

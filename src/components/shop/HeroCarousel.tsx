@@ -30,7 +30,7 @@ export function HeroCarousel() {
                   {image && (
                     <SafeImage
                       src={image}
-                      alt={b.heading ?? "Vizag Party World offer"}
+                      alt={b.heading ?? "The Celebration Store offer"}
                       className="aspect-[16/10] w-full object-cover sm:aspect-[21/8]"
                     />
                   )}
