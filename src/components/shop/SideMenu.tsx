@@ -53,8 +53,8 @@ export function SideMenu({ open, onOpenChange }: { open: boolean; onOpenChange: 
       >
         {/* Header with White Logo Container */}
         <div className="relative flex items-center justify-between border-b border-white/10 bg-black/40 p-4">
-          <div className="rounded-xl bg-white/95 px-2.5 py-1 shadow-sm border border-gold/20">
-            <Logo variant="mobile" height={36} />
+          <div className="rounded-xl bg-white/95 px-3 py-1.5 shadow-sm border border-gold/20">
+            <Logo variant="mobile" height={44} />
           </div>
           <button
             onClick={close}

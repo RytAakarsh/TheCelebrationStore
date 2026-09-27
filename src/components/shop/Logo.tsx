@@ -17,7 +17,7 @@ export function Logo({ className, variant = "header", height }: LogoProps) {
       to="/"
       aria-label={`${BRAND.name} Home`}
       className={cn(
-        "inline-flex items-center transition-transform hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-gold rounded-xl",
+        "inline-flex items-center transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-gold rounded-xl",
         variant === "footer" && "bg-white/95 rounded-2xl p-2 shadow-sm border border-gold/20",
         variant === "admin" && "bg-white/95 rounded-lg p-1.5 shadow-sm",
         className
@@ -28,12 +28,12 @@ export function Logo({ className, variant = "header", height }: LogoProps) {
         alt={`${BRAND.name} — ${BRAND.tagline}`}
         className={cn(
           "w-auto object-contain select-none",
-          variant === "header" && "h-9 sm:h-11 md:h-12 max-w-[140px] sm:max-w-[180px] md:max-w-[210px]",
-          variant === "mobile" && "h-8 sm:h-9 max-w-[130px]",
-          variant === "footer" && "h-11 sm:h-12 max-w-[180px]",
-          variant === "admin" && "h-8 sm:h-9 max-w-[140px]",
-          variant === "icon-only" && "h-9 w-9 object-cover rounded-full",
-          variant === "full" && "h-12 sm:h-14 max-w-[220px]"
+          variant === "header" && "h-11 sm:h-12 md:h-13 max-w-[175px] sm:max-w-[205px] md:max-w-[240px]",
+          variant === "mobile" && "h-10 sm:h-11 max-w-[165px]",
+          variant === "footer" && "h-12 sm:h-13 max-w-[190px]",
+          variant === "admin" && "h-9 sm:h-10 max-w-[150px]",
+          variant === "icon-only" && "h-10 w-10 object-cover rounded-full",
+          variant === "full" && "h-14 sm:h-16 max-w-[240px]"
         )}
         style={height ? { height: `${height}px`, maxHeight: `${height}px` } : undefined}
         loading="eager"
