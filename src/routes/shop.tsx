@@ -47,8 +47,8 @@ function ShopPage() {
                 onClick={() => setFilters((prev) => ({ ...prev, category: undefined }))}
                 className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                   !filters.category
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "border border-border bg-background hover:bg-secondary"
+                    ? "bg-[image:var(--gradient-gold)] text-[#111B2E] font-bold shadow-xs"
+                    : "border border-border bg-white text-[#111B2E] hover:bg-secondary"
                 }`}
               >
                 All Items
@@ -59,8 +59,8 @@ function ShopPage() {
                   onClick={() => setFilters((prev) => ({ ...prev, category: cat.slug }))}
                   className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                     filters.category === cat.slug
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "border border-border bg-background hover:bg-secondary"
+                      ? "bg-[image:var(--gradient-gold)] text-[#111B2E] font-bold shadow-xs"
+                      : "border border-border bg-white text-[#111B2E] hover:bg-secondary"
                   }`}
                 >
                   {cat.name}

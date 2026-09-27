@@ -15,8 +15,8 @@ export function BottomNav() {
 
   return (
     <nav
-      aria-label="Quick navigation"
-      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-gold/25 surface-ink pt-1 lg:hidden"
+      aria-label="Quick mobile navigation"
+      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-gold/30 surface-navy shadow-lg pt-1 lg:hidden"
     >
       <ul className="grid grid-cols-5">
         {items.map(({ to, label, icon: Icon }) => {
@@ -26,12 +26,12 @@ export function BottomNav() {
               <Link
                 to={to as never}
                 className={cn(
-                  "flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold",
-                  active ? "text-gold" : "text-cream/70",
+                  "flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors",
+                  active ? "text-gold font-bold" : "text-cream/70 hover:text-white"
                 )}
               >
-                <Icon className="h-5 w-5" />
-                {label}
+                <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110 text-gold")} />
+                <span>{label}</span>
               </Link>
             </li>
           );

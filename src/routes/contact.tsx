@@ -315,7 +315,8 @@ function ContactPage() {
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="w-full rounded-xl bg-pink text-white hover:bg-pink/90 shadow-pink"
+                    variant="coral"
+                    className="w-full rounded-xl"
                     size="lg"
                   >
                     <Send className="mr-2 h-4 w-4" />

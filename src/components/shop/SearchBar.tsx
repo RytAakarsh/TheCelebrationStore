@@ -21,8 +21,12 @@ export function SearchBar({
     e.preventDefault();
     const q = value.trim();
     if (!q) return;
-    const recent: string[] = JSON.parse(localStorage.getItem("vpw_recent_searches") ?? "[]");
-    localStorage.setItem("vpw_recent_searches", JSON.stringify([q, ...recent.filter((r) => r !== q)].slice(0, 6)));
+    try {
+      const recent: string[] = JSON.parse(localStorage.getItem("vpw_recent_searches") ?? "[]");
+      localStorage.setItem("vpw_recent_searches", JSON.stringify([q, ...recent.filter((r) => r !== q)].slice(0, 6)));
+    } catch {
+      // ignore storage error
+    }
     navigate({ to: "/search", search: { q } });
   }
 
@@ -31,22 +35,24 @@ export function SearchBar({
       <label htmlFor="site-search" className="sr-only">
         Search products
       </label>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <input
-        id="site-search"
-        type="search"
-        autoFocus={autoFocus}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-20 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-gold"
-      />
-      <button
-        type="submit"
-        className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 rounded-lg bg-[image:var(--gradient-festive)] px-3 text-xs font-bold text-primary-foreground"
-      >
-        Search
-      </button>
+      <div className="relative flex items-center">
+        <Search className="pointer-events-none absolute left-4 h-4 w-4 text-muted-foreground" />
+        <input
+          id="site-search"
+          type="search"
+          autoFocus={autoFocus}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="h-11 w-full rounded-full border border-[#E6DDCA] bg-white pl-10 pr-24 text-sm text-[#111B2E] shadow-sm outline-none transition-all placeholder:text-muted-foreground/80 focus:border-gold focus:ring-2 focus:ring-gold/20"
+        />
+        <button
+          type="submit"
+          className="absolute right-1.5 h-8.5 rounded-full bg-[image:var(--gradient-gold)] px-4 text-xs font-bold text-[#111B2E] shadow-sm transition hover:brightness-105 active:scale-95"
+        >
+          Search
+        </button>
+      </div>
     </form>
   );
 }

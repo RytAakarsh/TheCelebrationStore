@@ -1,24 +1,44 @@
-import { BadgeCheck, PackageCheck, Sparkles, Truck } from "lucide-react";
+import { Sparkles, Truck, ShieldCheck, MessageCircle } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 
 const items = [
-  { icon: Truck, title: "Fast Local Delivery", text: "Quick dispatch across Visakhapatnam" },
-  { icon: BadgeCheck, title: "Genuine Quality", text: "Handpicked celebration products" },
-  { icon: PackageCheck, title: "Bulk & Event Orders", text: "Special pricing for large events" },
-  { icon: Sparkles, title: "Festive Curation", text: "New arrivals every season" },
+  {
+    icon: Sparkles,
+    title: "Premium Quality",
+    text: "Celebration essentials curated with care",
+  },
+  {
+    icon: Truck,
+    title: "Fast Delivery",
+    text: "Flat ₹79 shipping • Free over ₹999",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Trusted Store",
+    text: "Poorna Market, Visakhapatnam",
+  },
+  {
+    icon: MessageCircle,
+    title: "Easy Support",
+    text: `WhatsApp assistance (${BRAND.phone})`,
+  },
 ];
 
 export function TrustBar() {
   return (
-    <section className="container-page py-6">
-      <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section className="container-page py-6 sm:py-8">
+      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {items.map(({ icon: Icon, title, text }) => (
-          <li key={title} className="card-product flex items-start gap-3 p-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[image:var(--gradient-gold)] text-gold-foreground">
+          <li
+            key={title}
+            className="card-product flex items-center gap-3.5 p-3.5 sm:p-4 bg-gradient-to-r from-white to-[#FFF8ED] border border-[#EDE7DC]"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-gold)] text-[#111B2E] shadow-sm">
               <Icon className="h-5 w-5" />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-bold">{title}</span>
-              <span className="block text-xs text-muted-foreground">{text}</span>
+              <span className="block text-xs font-bold uppercase tracking-wider text-gold">{title}</span>
+              <span className="block text-xs text-[#23314D]/80 font-medium leading-tight mt-0.5">{text}</span>
             </span>
           </li>
         ))}

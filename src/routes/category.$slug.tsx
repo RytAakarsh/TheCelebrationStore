@@ -61,8 +61,8 @@ function CategoryPage() {
               className={cn(
                 "whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
                 !sub
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border bg-background hover:bg-secondary",
+                  ? "bg-[image:var(--gradient-gold)] text-[#111B2E] font-bold shadow-xs"
+                  : "border border-border bg-white text-[#111B2E] hover:bg-secondary",
               )}
             >
               All {category.name}
@@ -77,8 +77,8 @@ function CategoryPage() {
                   className={cn(
                     "whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
                     sub === s.slug
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "border border-border bg-background hover:bg-secondary",
+                      ? "bg-[image:var(--gradient-gold)] text-[#111B2E] font-bold shadow-xs"
+                      : "border border-border bg-white text-[#111B2E] hover:bg-secondary",
                   )}
                 >
                   {s.name}

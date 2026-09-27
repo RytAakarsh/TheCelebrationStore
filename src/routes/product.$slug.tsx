@@ -338,7 +338,8 @@ function ProductPage() {
                 }
                 add.mutate({ productId: product.id, variantId, quantity });
               }}
-              className="rounded-2xl bg-pink text-white hover:bg-pink/90 font-bold shadow-pink text-sm h-12"
+              variant="coral"
+              className="rounded-2xl text-sm h-12"
             >
               Add to Celebration Cart
             </Button>
@@ -531,7 +532,8 @@ function ProductPage() {
                 }
                 add.mutate({ productId: product.id, variantId, quantity });
               }}
-              className="rounded-xl bg-pink text-white hover:bg-pink/90 text-xs px-3"
+              variant="coral"
+              className="rounded-xl text-xs px-3.5"
             >
               Add to Cart
             </Button>

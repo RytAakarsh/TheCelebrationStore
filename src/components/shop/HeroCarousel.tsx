@@ -1,63 +1,138 @@
-import { useQuery } from "@tanstack/react-query";
-import { SafeImage } from "@/components/shop/SafeImage";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
-import { heroBannersQuery } from "@/lib/queries";
+import { cn } from "@/lib/utils";
+
+export const HERO_SLIDES = [
+  {
+    id: "hero-1",
+    src: "/assets/celebrationstore_1_hero.png",
+    alt: "The Celebration Store — Everything for Life's Celebrations. Birthdays, Weddings, Gifting, Decorations & More.",
+    link: "/shop",
+    badge: "Everything for Celebrations",
+  },
+  {
+    id: "hero-2",
+    src: "/assets/celebrationstore_2_hero.png",
+    alt: "Beautiful Return Gifts — Make your guests remember the celebration long after it ends.",
+    link: "/category/return-gifts",
+    badge: "Return Gifts Boutique",
+  },
+  {
+    id: "hero-3",
+    src: "/assets/celebrationstore_3_hero.png",
+    alt: "Party Essentials from ₹45 — Balloons, candles, lights and props for every celebration.",
+    link: "/offers",
+    badge: "Party Essentials from ₹45",
+  },
+];
 
 export function HeroCarousel() {
-  const { data: banners, isLoading } = useQuery(heroBannersQuery());
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, duration: 25 },
+    [Autoplay({ delay: 5500, stopOnInteraction: false, stopOnMouseEnter: true })]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  if (isLoading) {
-    return (
-      <div className="container-page py-4">
-        <div className="aspect-[16/10] w-full animate-pulse rounded-2xl bg-secondary sm:aspect-[21/8]" />
-      </div>
-    );
-  }
-  if (!banners?.length) return null;
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  const scrollTo = useCallback(
+    (index: number) => {
+      if (emblaApi) emblaApi.scrollTo(index);
+    },
+    [emblaApi]
+  );
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
 
   return (
-    <section aria-label="Featured offers" className="container-page pt-4">
-      <Carousel opts={{ loop: true }} plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}>
-        <CarouselContent>
-          {banners.map((b) => {
-            const image = b.desktop_image_url ?? b.mobile_image_url;
-            return (
-              <CarouselItem key={b.id}>
-                <div className="relative overflow-hidden rounded-2xl bg-ink">
-                  {image && (
-                    <SafeImage
-                      src={image}
-                      alt={b.heading ?? "The Celebration Store offer"}
-                      className="aspect-[16/10] w-full object-cover sm:aspect-[21/8]"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-[image:var(--gradient-ink)]" />
-                  <div className="absolute inset-0 flex flex-col justify-center gap-2 p-5 sm:p-10">
-                    {b.heading && (
-                      <h2 className="max-w-md font-display text-2xl font-bold text-cream drop-shadow sm:text-4xl">
-                        {b.heading}
-                      </h2>
-                    )}
-                    {b.subheading && <p className="max-w-md text-sm text-cream/85 sm:text-base">{b.subheading}</p>}
-                    {b.cta_text && b.cta_link && (
-                      <div className="mt-2">
-                        <Button asChild variant="gold" size="lg">
-                          <Link to={b.cta_link as never}>{b.cta_text}</Link>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-        <CarouselPrevious className="left-3 hidden sm:flex" />
-        <CarouselNext className="right-3 hidden sm:flex" />
-      </Carousel>
+    <section aria-label="Celebration highlights" className="container-page pt-3 sm:pt-4">
+      <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-[0_4px_24px_rgba(17,27,46,0.06)] border border-[#EFE8DC] bg-white">
+        <div ref={emblaRef} className="overflow-hidden">
+          <div className="flex">
+            {HERO_SLIDES.map((slide, index) => (
+              <div key={slide.id} className="min-w-0 shrink-0 grow-0 basis-full">
+                <Link
+                  to={slide.link as never}
+                  aria-label={slide.alt}
+                  className="block relative w-full overflow-hidden transition-opacity hover:opacity-[0.98]"
+                >
+                  <img
+                    src={slide.src}
+                    alt={slide.alt}
+                    width={1536}
+                    height={512}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    // @ts-expect-error fetchpriority is a modern standard attribute
+                    fetchpriority={index === 0 ? "high" : "auto"}
+                    className="w-full h-auto aspect-[16/7] sm:aspect-[21/8] md:aspect-[2.8/1] object-cover sm:object-contain bg-[#FFFDF8]"
+                  />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Previous Button */}
+        <button
+          type="button"
+          onClick={scrollPrev}
+          aria-label="Previous slide"
+          className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 grid h-8 w-8 sm:h-11 sm:w-11 place-items-center rounded-full bg-white/90 text-[#111B2E] shadow-md border border-[#EAE1CF] backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-gold hover:scale-105 active:scale-95 z-10"
+        >
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+
+        {/* Next Button */}
+        <button
+          type="button"
+          onClick={scrollNext}
+          aria-label="Next slide"
+          className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 grid h-8 w-8 sm:h-11 sm:w-11 place-items-center rounded-full bg-white/90 text-[#111B2E] shadow-md border border-[#EAE1CF] backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-gold hover:scale-105 active:scale-95 z-10"
+        >
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+
+        {/* Pagination Dots */}
+        <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 z-10 bg-black/25 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+          {HERO_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => scrollTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={cn(
+                "h-2 rounded-full transition-all duration-300",
+                selectedIndex === i
+                  ? "w-6 bg-[image:var(--gradient-gold)] shadow-xs"
+                  : "w-2 bg-white/70 hover:bg-white"
+              )}
+            />
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

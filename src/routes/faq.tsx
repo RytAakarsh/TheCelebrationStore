@@ -8,7 +8,7 @@ import { MessageSquare, Phone, HelpCircle } from "lucide-react";
 const faqs = [
   {
     q: "Where is The Celebration Store physically located?",
-    a: `Our physical store is located at ${BRAND.address}. You are welcome to visit us Monday to Sunday between 9:30 AM to 9:00 PM to inspect our extensive collections of balloons, decorations, and German silver return gifts in person.`
+    a: "Our physical store is located at Party World, Poorna Market, Visakhapatnam - 530001, Andhra Pradesh, India. You are welcome to visit us Monday to Sunday between 9:30 AM to 9:00 PM to inspect our extensive collections of balloons, decorations, and German silver return gifts in person."
   },
   {
     q: "Do you offer delivery across Visakhapatnam and other cities in India?",
@@ -98,7 +98,7 @@ function FaqPage() {
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Button asChild variant="gold">
-              <a href={BRAND.whatsappUrl("Hi! I have a question about celebration products")} target="_blank" rel="noreferrer">
+              <a href={whatsappLink("Hi! I have a question about celebration products")} target="_blank" rel="noreferrer">
                 <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp Us
               </a>
             </Button>

@@ -316,7 +316,8 @@ function CartPage() {
 
           <Button
             onClick={() => navigate({ to: "/checkout" })}
-            className="w-full rounded-2xl bg-pink text-white hover:bg-pink/90 font-bold shadow-pink text-sm h-12"
+            variant="gold"
+            className="w-full rounded-2xl text-sm h-12"
             size="lg"
           >
             <span>Proceed to Checkout</span>
