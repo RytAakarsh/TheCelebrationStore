@@ -132,6 +132,21 @@ function ProductsList() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Update failed"),
   });
 
+  const deleteProduct = useMutation({
+    mutationFn: async (productId: string) => {
+      await supabase.from("home_section_products").delete().eq("product_id", productId);
+      await supabase.from("product_images").delete().eq("product_id", productId);
+      await supabase.from("product_variants").delete().eq("product_id", productId);
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "products"] });
+      toast.success("Product deleted successfully");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete product"),
+  });
+
   if (isLoading || !data) return <AdminLoading />;
 
   const term = q.trim().toLowerCase();
@@ -316,6 +331,20 @@ function ProductsList() {
                         <Link to="/admin/products/$id" params={{ id: p.id }}>
                           <Edit className="h-4 w-4 text-gold" />
                         </Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        title="Delete Product"
+                        disabled={deleteProduct.isPending}
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to permanently delete "${p.name}"?`)) {
+                            deleteProduct.mutate(p.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive hover:text-red-500" />
                       </Button>
                     </div>
                   </td>

@@ -87,6 +87,8 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [slugTouched, setSlugTouched] = useState(false);
 
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+
   const { data: taxonomy } = useQuery({
     queryKey: ["admin", "taxonomy"],
     queryFn: async () => {
@@ -97,6 +99,38 @@ export function ProductForm({ productId }: { productId?: string }) {
       return { categories: cats.data ?? [], subcategories: subs.data ?? [] };
     },
   });
+
+  const { data: homeSections } = useQuery({
+    queryKey: ["admin", "home_sections_for_product"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("home_sections")
+        .select("id,key,title,source,display_order")
+        .eq("is_active", true)
+        .order("display_order");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  const { data: linkedSections } = useQuery({
+    queryKey: ["admin", "product_home_sections", productId],
+    enabled: !!productId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("home_section_products")
+        .select("section_id")
+        .eq("product_id", productId!);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => r.section_id);
+    },
+  });
+
+  useEffect(() => {
+    if (linkedSections) {
+      setSelectedSections(linkedSections);
+    }
+  }, [linkedSections]);
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ["admin", "product", productId],
@@ -110,6 +144,23 @@ export function ProductForm({ productId }: { productId?: string }) {
       if (error) throw new Error(error.message);
       return data;
     },
+  });
+
+  const deleteProduct = useMutation({
+    mutationFn: async () => {
+      if (!productId) return;
+      await supabase.from("home_section_products").delete().eq("product_id", productId);
+      await supabase.from("product_images").delete().eq("product_id", productId);
+      await supabase.from("product_variants").delete().eq("product_id", productId);
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      toast.success("Product deleted successfully");
+      navigate({ to: "/admin/products" });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete product"),
   });
 
   useEffect(() => {
@@ -252,6 +303,19 @@ export function ProductForm({ productId }: { productId?: string }) {
           const { error } = await supabase.from("product_variants").insert(row);
           if (error) throw new Error(error.message);
         }
+      }
+
+      // homepage sections: replace links for this product
+      await supabase.from("home_section_products").delete().eq("product_id", id!);
+      if (selectedSections.length) {
+        const { error: secErr } = await supabase.from("home_section_products").insert(
+          selectedSections.map((secId, i) => ({
+            product_id: id!,
+            section_id: secId,
+            position: i,
+          })),
+        );
+        if (secErr) console.warn("Failed to update home section links:", secErr.message);
       }
 
       return id!;
@@ -444,14 +508,73 @@ export function ProductForm({ productId }: { productId?: string }) {
         </div>
       </section>
 
-      <div className="sticky bottom-0 flex gap-2 border-t border-border bg-background/95 py-3 backdrop-blur">
-        <Button type="submit" variant="hero" size="lg" disabled={save.isPending}>
-          {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {productId ? "Save changes" : "Create product"}
-        </Button>
-        <Button type="button" variant="outline" size="lg" onClick={() => navigate({ to: "/admin/products" })}>
-          Cancel
-        </Button>
+      {/* Homepage Sections */}
+      <section className="rounded-xl border border-border bg-card p-4">
+        <h2 className="font-display text-lg font-bold">Homepage Section Assignments</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Select which curated homepage sections will showcase this product directly
+        </p>
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 md:grid-cols-3">
+          {(homeSections ?? []).map((sec) => {
+            const isChecked = selectedSections.includes(sec.id);
+            return (
+              <label
+                key={sec.id}
+                className="flex items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-xs font-semibold cursor-pointer hover:bg-secondary/40 transition"
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedSections((prev) => [...prev, sec.id]);
+                    } else {
+                      setSelectedSections((prev) => prev.filter((s) => s !== sec.id));
+                    }
+                  }}
+                  className="rounded border-border text-gold focus:ring-gold"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-ink font-medium">{sec.title}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">{sec.source}</p>
+                </div>
+              </label>
+            );
+          })}
+          {!homeSections?.length && (
+            <p className="text-xs text-muted-foreground col-span-3">No active homepage sections configured.</p>
+          )}
+        </div>
+      </section>
+
+      <div className="sticky bottom-0 flex items-center justify-between border-t border-border bg-background/95 py-3 backdrop-blur">
+        <div className="flex gap-2">
+          <Button type="submit" variant="hero" size="lg" disabled={save.isPending}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {productId ? "Save changes" : "Create product"}
+          </Button>
+          <Button type="button" variant="outline" size="lg" onClick={() => navigate({ to: "/admin/products" })}>
+            Cancel
+          </Button>
+        </div>
+
+        {productId && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            disabled={deleteProduct.isPending}
+            onClick={() => {
+              if (confirm(`Are you sure you want to permanently delete "${draft.name}"? This action cannot be undone.`)) {
+                deleteProduct.mutate();
+              }
+            }}
+            className="text-destructive hover:bg-destructive/10 border-destructive/30"
+          >
+            {deleteProduct.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+            Delete Product
+          </Button>
+        )}
       </div>
     </form>
   );

@@ -48,7 +48,18 @@ export async function uploadImage(file: File, folder = "products"): Promise<stri
   });
   if (error) throw new Error(error.message);
 
-  const { data, error: signErr } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
-  if (signErr || !data?.signedUrl) throw new Error(signErr?.message ?? "Could not create image link");
-  return data.signedUrl;
+  try {
+    const { data: signData, error: signErr } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
+    if (!signErr && signData?.signedUrl) {
+      return signData.signedUrl;
+    }
+  } catch {
+    // fallback to getPublicUrl
+  }
+
+  const { data: pubData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  if (pubData?.publicUrl) {
+    return pubData.publicUrl;
+  }
+  throw new Error("Could not retrieve image URL after upload");
 }

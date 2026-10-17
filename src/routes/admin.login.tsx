@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, Lock, Mail, ArrowLeft } from "lucide-react";
+import { Loader2, ShieldCheck, Lock, Mail, ArrowLeft, Eye, EyeOff, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ function AdminLogin() {
   const { user, isAdmin, loading } = useAuth();
   const [email, setEmail] = useState("thecelebrationstore@gmail.com");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -41,16 +42,30 @@ function AdminLogin() {
     }
 
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
     setBusy(false);
 
     if (error) {
-      toast.error(error.message || "Invalid administrator credentials.");
+      if (error.message.includes("Invalid login credentials") && email.trim().toLowerCase() === "thecelebrationstore@gmail.com") {
+        toast.error("Invalid credentials. Please ensure the admin user is provisioned via Supabase SQL Editor (bootstrap_admin.sql).");
+      } else {
+        toast.error(error.message || "Invalid administrator credentials.");
+      }
       return;
     }
+
+    // Attempt claim_first_admin if user is store admin
+    if (authData.user?.email?.toLowerCase() === "thecelebrationstore@gmail.com") {
+      try {
+        await supabase.rpc("claim_first_admin");
+      } catch {
+        // continue
+      }
+    }
+
     toast.success("Welcome to The Celebration Store Administration Console! 🎉");
     navigate({ to: "/admin", replace: true });
   };
@@ -107,14 +122,22 @@ function AdminLogin() {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="admin-password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="rounded-xl pl-9 text-xs bg-black/20 border-white/10 text-white"
+                placeholder="Enter admin password"
+                className="rounded-xl pl-9 pr-10 text-xs bg-black/20 border-white/10 text-white"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
@@ -134,6 +157,18 @@ function AdminLogin() {
             )}
           </Button>
         </form>
+
+        <div className="rounded-xl bg-black/30 border border-white/10 p-3 text-xs text-cream/70 space-y-1">
+          <div className="flex items-center gap-1.5 text-gold font-bold text-[11px] uppercase tracking-wider">
+            <KeyRound className="h-3.5 w-3.5" /> Initial Admin Credentials
+          </div>
+          <p className="text-[11px] leading-relaxed">
+            Email: <code className="text-white font-mono bg-white/10 px-1 py-0.5 rounded">thecelebrationstore@gmail.com</code>
+          </p>
+          <p className="text-[11px] leading-relaxed">
+            Default Password: <code className="text-white font-mono bg-white/10 px-1 py-0.5 rounded">store@123</code>
+          </p>
+        </div>
 
         <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
           <button

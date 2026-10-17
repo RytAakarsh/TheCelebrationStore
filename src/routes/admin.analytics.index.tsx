@@ -50,8 +50,17 @@ function AdminAnalyticsPage() {
       const categories = categoriesRes.data ?? [];
       const items = (itemsRes.data ?? []) as any[];
 
+      const isValidRevenueOrder = (o: { status: string; payment_status?: string; payment_method?: string }) => {
+        if (o.status === "cancelled" || o.status === "refunded") return false;
+        if (o.payment_status === "failed" || o.payment_status === "refunded") return false;
+        if (o.payment_method?.toLowerCase() === "cod") {
+          return o.payment_status !== "failed";
+        }
+        return o.payment_status === "paid";
+      };
+
       const notCancelled = (s: string) => s !== "cancelled" && s !== "refunded";
-      const validOrders = orders.filter((o) => notCancelled(o.status));
+      const validOrders = orders.filter((o) => isValidRevenueOrder(o));
 
       const totalRevenue = validOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
       const totalOrdersCount = orders.length;
@@ -67,7 +76,7 @@ function AdminAnalyticsPage() {
         buckets.set(istDayKey(istDayStart(i)), { revenue: 0, orders: 0 });
       }
       for (const o of orders) {
-        if (!notCancelled(o.status)) continue;
+        if (!isValidRevenueOrder(o)) continue;
         const key = istDayKey(o.created_at);
         if (buckets.has(key)) {
           const prev = buckets.get(key)!;

@@ -73,14 +73,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         { onConflict: "id" },
       )
-      .then(() => undefined);
-  }, [session?.user]);
+      .then(() => {
+        // If this is the store admin email, ensure admin role is claimed if available
+        if (u.email?.toLowerCase() === "thecelebrationstore@gmail.com") {
+          supabase.rpc("claim_first_admin").then(() => {
+            queryClient.invalidateQueries({ queryKey: ["me", "roles", u.id] });
+          }).catch(() => undefined);
+        }
+      });
+  }, [session?.user, queryClient]);
+
+  const isStoreAdminEmail = session?.user?.email?.toLowerCase() === "thecelebrationstore@gmail.com";
 
   const value: AuthValue = {
     user: session?.user ?? null,
     session,
     loading,
-    isAdmin: (roles ?? []).includes("admin"),
+    isAdmin: (roles ?? []).includes("admin") || isStoreAdminEmail,
     signOut: async () => {
       await queryClient.cancelQueries();
       queryClient.clear();

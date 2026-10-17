@@ -64,6 +64,15 @@ function useDashboard() {
         orders: { status: string; created_at: string };
       }[];
 
+      const isValidRevenueOrder = (o: { status: string; payment_status?: string; payment_method?: string }) => {
+        if (o.status === "cancelled" || o.status === "refunded") return false;
+        if (o.payment_status === "failed" || o.payment_status === "refunded") return false;
+        if (o.payment_method?.toLowerCase() === "cod") {
+          return o.payment_status !== "failed";
+        }
+        return o.payment_status === "paid";
+      };
+
       const notCancelled = (s: string) => s !== "cancelled" && s !== "refunded";
       const todayStart = istDayStart().getTime();
       const weekStart = istDayStart(6).getTime();
@@ -72,13 +81,13 @@ function useDashboard() {
 
       const todays = orders.filter((o) => at(o) >= todayStart);
       const revenue = (rows: OrderRow[]) =>
-        rows.filter((o) => notCancelled(o.status)).reduce((s, o) => s + Number(o.total), 0);
+        rows.filter((o) => isValidRevenueOrder(o)).reduce((s, o) => s + Number(o.total), 0);
 
       // sales chart: last 30 IST days
       const buckets = new Map<string, number>();
       for (let i = 29; i >= 0; i--) buckets.set(istDayKey(istDayStart(i)), 0);
       for (const o of orders) {
-        if (!notCancelled(o.status)) continue;
+        if (!isValidRevenueOrder(o)) continue;
         const key = istDayKey(o.created_at);
         if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number(o.total));
       }
