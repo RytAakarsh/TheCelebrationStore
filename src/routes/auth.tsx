@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ShopLayout } from "@/components/shop/ShopLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BRAND } from "@/lib/brand";
-import { Sparkles, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, RotateCw } from "lucide-react";
 
 type AuthSearch = { next?: string };
 
@@ -34,6 +33,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -57,7 +57,7 @@ function AuthPage() {
         if (error) throw error;
         if (!data.session) {
           setSent(true);
-          toast.success("Check your email to confirm your account.");
+          toast.success("Account created! Please check your email to activate it.");
         } else {
           toast.success(`Welcome to ${BRAND.name}! 🎉`);
         }
@@ -70,7 +70,38 @@ function AuthPage() {
         toast.success("Welcome back! 🎉");
       }
     } catch (err: any) {
-      toast.error(err.message || "Authentication failed. Please try again.");
+      const msg = err?.message || "";
+      if (msg.includes("Email not confirmed")) {
+        setSent(true);
+        toast.error("Your email is not confirmed yet. Please click the verification link in your email, or click Resend below.");
+      } else if (msg.includes("weak_password") || msg.includes("weak and easy to guess")) {
+        toast.error("This password is too common or weak. Please enter at least 8 characters with a mix of letters and numbers.");
+      } else {
+        toast.error(msg || "Authentication failed. Please try again.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!email.trim()) {
+      toast.error("Please enter your email address first.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}${next ?? "/account"}`,
+        },
+      });
+      if (error) throw error;
+      toast.success("Confirmation email resent! Please check your inbox and spam folder.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to resend confirmation email.");
     } finally {
       setBusy(false);
     }
@@ -163,9 +194,31 @@ function AuthPage() {
           </div>
 
           {sent ? (
-            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs text-emerald-800 space-y-2 text-center">
-              <p className="font-bold">Confirmation link sent!</p>
-              <p>We've sent an activation link to <strong>{email}</strong>. Please check your inbox and click the link to sign in.</p>
+            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5 text-xs text-emerald-800 space-y-3 text-center">
+              <p className="font-bold text-sm">Confirmation link sent!</p>
+              <p>We've sent an activation link to <strong>{email}</strong>. Please check your inbox and click the link to activate your celebration account.</p>
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={resendConfirmation}
+                  className="rounded-xl text-xs font-semibold bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                >
+                  <RotateCw className="mr-1.5 h-3.5 w-3.5" />
+                  Resend confirmation email
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSent(false)}
+                  className="rounded-xl text-xs text-emerald-700"
+                >
+                  Back to login
+                </Button>
+              </div>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
@@ -209,14 +262,22 @@ function AuthPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
                     placeholder="Minimum 6 characters"
-                    className="rounded-xl pl-9 text-xs"
+                    className="rounded-xl pl-9 pr-10 text-xs"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 
