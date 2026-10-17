@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ShopLayout, PageHeader } from "@/components/shop/ShopLayout";
 import { Button } from "@/components/ui/button";
-import { BRAND } from "@/lib/brand";
+import { BRAND, whatsappLink } from "@/lib/brand";
 import { MessageSquare, Phone, HelpCircle } from "lucide-react";
 
 const faqs = [

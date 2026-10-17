@@ -30,13 +30,13 @@ const SUPPORT_LINKS = [
 
 export function Footer() {
   const { data: settings } = useQuery(settingsQuery());
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+  const [openSections, setOpenSections] = useState<{ shop: boolean; support: boolean; store: boolean }>({
     shop: false,
     support: false,
     store: false,
   });
 
-  const toggleSection = (sec: string) => {
+  const toggleSection = (sec: "shop" | "support" | "store") => {
     setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }));
   };
 

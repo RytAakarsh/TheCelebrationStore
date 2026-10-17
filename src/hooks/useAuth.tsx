@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(() => {
         // If this is the store admin email, ensure admin role is claimed if available
         if (u.email?.toLowerCase() === "thecelebrationstore@gmail.com") {
-          supabase.rpc("claim_first_admin").then(() => {
+          Promise.resolve((supabase.rpc as any)("claim_first_admin")).then(() => {
             queryClient.invalidateQueries({ queryKey: ["me", "roles", u.id] });
           }).catch(() => undefined);
         }

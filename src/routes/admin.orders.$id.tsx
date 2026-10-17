@@ -157,7 +157,7 @@ function OrderDetail() {
                     <p className="truncate font-semibold text-sm">{it.product_name}</p>
                     <p className="text-xs text-muted-foreground">
                       {it.variant_name ? `Variant: ${it.variant_name} · ` : ""}
-                      Unit Price: {inr(it.unit_price)} × {it.quantity}
+                      Unit Price: {inr(it.price)} × {it.quantity}
                     </p>
                   </div>
                   <span className="font-bold text-sm">{inr(it.total)}</span>

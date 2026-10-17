@@ -7,13 +7,25 @@ import { Label } from "@/components/ui/label";
 import { ShopLayout } from "@/components/shop/ShopLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, RotateCw } from "lucide-react";
+import { BRAND } from "@/lib/brand";
+import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, RotateCw, AlertCircle } from "lucide-react";
 
-type AuthSearch = { next?: string };
+type AuthSearch = {
+  next?: string;
+  code?: string;
+  error?: string;
+  error_code?: string;
+  error_description?: string;
+};
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>): AuthSearch =>
-    typeof search["next"] === "string" && search["next"].startsWith("/") ? { next: search["next"] } : {},
+  validateSearch: (search: Record<string, unknown>): AuthSearch => ({
+    next: typeof search["next"] === "string" && search["next"].startsWith("/") ? search["next"] : undefined,
+    code: typeof search["code"] === "string" ? search["code"] : undefined,
+    error: typeof search["error"] === "string" ? search["error"] : undefined,
+    error_code: typeof search["error_code"] === "string" ? search["error_code"] : undefined,
+    error_description: typeof search["error_description"] === "string" ? search["error_description"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: `Sign in / Join — ${BRAND.name}` },
@@ -23,10 +35,38 @@ export const Route = createFileRoute("/auth")({
     ],
   }),
   component: AuthPage,
+  errorComponent: AuthErrorComponent,
 });
 
+function AuthErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  console.error("Auth page error:", error);
+  return (
+    <ShopLayout>
+      <div className="container-page flex justify-center py-12 px-4">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 sm:p-10 text-center shadow-sm space-y-4">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="h-6 w-6" />
+          </div>
+          <h1 className="font-display text-xl font-bold text-ink">Authentication Notice</h1>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {error?.message || "There was a problem loading the sign-in page. Please try refreshing or return to homepage."}
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <Button onClick={() => reset()} className="rounded-xl text-xs font-semibold bg-pink text-white hover:bg-pink/90">
+              Try again
+            </Button>
+            <Button asChild variant="outline" className="rounded-xl text-xs font-semibold">
+              <Link to="/">Go to Homepage</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </ShopLayout>
+  );
+}
+
 function AuthPage() {
-  const { next } = Route.useSearch();
+  const { next, code, error: oauthError, error_description: oauthErrorDesc } = Route.useSearch();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -36,10 +76,41 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [oauthChecking, setOauthChecking] = useState(Boolean(code));
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: (next ?? "/account") as never, replace: true });
+    if (oauthError || oauthErrorDesc) {
+      const msg = oauthErrorDesc || oauthError || "Google sign-in was cancelled or encountered an error.";
+      console.warn("[Auth] OAuth error callback:", { oauthError, oauthErrorDesc });
+      toast.error(msg);
+      setOauthChecking(false);
+    }
+  }, [oauthError, oauthErrorDesc]);
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate({ to: (next ?? "/account") as never, replace: true });
+    }
   }, [user, loading, next, navigate]);
+
+  useEffect(() => {
+    if (code) {
+      setOauthChecking(true);
+      supabase.auth.getSession().then(({ data, error }) => {
+        if (error) {
+          console.error("[Auth] OAuth session exchange error:", error);
+          toast.error("Could not complete authentication. Please try logging in again.");
+          setOauthChecking(false);
+        } else if (data.session) {
+          toast.success(`Welcome to ${BRAND.name}! 🎉`);
+          navigate({ to: (next ?? "/account") as never, replace: true });
+        } else {
+          const timer = setTimeout(() => setOauthChecking(false), 2500);
+          return () => clearTimeout(timer);
+        }
+      });
+    }
+  }, [code, next, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +121,7 @@ function AuthPage() {
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}${next ?? "/account"}`,
+            emailRedirectTo: `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`,
             data: { full_name: fullName.trim() },
           },
         });
@@ -95,7 +166,7 @@ function AuthPage() {
         type: "signup",
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}${next ?? "/account"}`,
+          emailRedirectTo: `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`,
         },
       });
       if (error) throw error;
@@ -110,14 +181,16 @@ function AuthPage() {
   async function google() {
     setBusy(true);
     try {
+      const redirectUrl = `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${next ?? "/account"}`,
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;
     } catch (err: any) {
+      console.error("[Auth] Google sign-in failed:", err);
       toast.error(err.message || "Google sign-in could not be initiated.");
     } finally {
       setBusy(false);
@@ -156,15 +229,23 @@ function AuthPage() {
             </p>
           </div>
 
-          {/* Primary Google Login Button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="w-full rounded-2xl border-border hover:bg-secondary font-bold text-xs h-12 flex items-center justify-center gap-2.5 shadow-sm"
-            onClick={google}
-            disabled={busy}
-          >
+          {oauthChecking && !user ? (
+            <div className="py-8 text-center space-y-4">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+              <p className="text-sm font-semibold text-ink">Completing Google Sign In...</p>
+              <p className="text-xs text-muted-foreground">Please wait a moment while we set up your celebration account.</p>
+            </div>
+          ) : (
+            <>
+              {/* Primary Google Login Button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full rounded-2xl border-border hover:bg-secondary font-bold text-xs h-12 flex items-center justify-center gap-2.5 shadow-sm"
+                onClick={google}
+                disabled={busy}
+              >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -314,6 +395,8 @@ function AuthPage() {
               </button>
             )}
           </div>
+            </>
+          )}
 
           <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
             By proceeding, you agree to {BRAND.name}&apos;s{" "}

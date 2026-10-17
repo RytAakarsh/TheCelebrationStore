@@ -7,6 +7,7 @@ export const BRAND = {
   phone: "8019926065",
   phoneDisplay: "+91 8019926065",
   whatsapp: "8019926065",
+  address: "Party World, Poorna Market, Visakhapatnam - 530001, Andhra Pradesh, India",
   addressLines: [
     "Party World",
     "Poorna Market",

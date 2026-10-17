@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 
 export type ShopFilterState = {
   sort: string;
+  category?: string | undefined;
   minPrice?: number | undefined;
   maxPrice?: number | undefined;
   inStockOnly?: boolean | undefined;

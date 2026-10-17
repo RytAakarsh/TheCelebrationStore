@@ -60,7 +60,7 @@ function AdminLogin() {
     // Attempt claim_first_admin if user is store admin
     if (authData.user?.email?.toLowerCase() === "thecelebrationstore@gmail.com") {
       try {
-        await supabase.rpc("claim_first_admin");
+        await (supabase.rpc as any)("claim_first_admin");
       } catch {
         // continue
       }
