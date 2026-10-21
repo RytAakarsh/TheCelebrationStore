@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ShopLayout } from "@/components/shop/ShopLayout";
@@ -9,6 +10,8 @@ import { ProductRow } from "@/components/shop/ProductRow";
 import { SearchBar } from "@/components/shop/SearchBar";
 import { homeSectionsQuery, offerProductsQuery, productsQuery, categoriesQuery } from "@/lib/queries";
 import { BRAND, whatsappLink } from "@/lib/brand";
+import { useAuth } from "@/hooks/useAuth";
+import { getSavedAuthRedirect, clearAuthRedirect } from "@/lib/authRedirect";
 import { Sparkles, Gift, ArrowRight, MessageCircle, MapPin, PartyPopper } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -31,6 +34,20 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // If returning from OAuth redirect that landed on Site URL, route to pending destination
+  useEffect(() => {
+    if (!loading && user) {
+      const pendingDestination = getSavedAuthRedirect();
+      if (pendingDestination) {
+        clearAuthRedirect();
+        navigate({ to: pendingDestination as never, replace: true });
+      }
+    }
+  }, [user, loading, navigate]);
+
   const { data: sections } = useQuery(homeSectionsQuery());
   const { data: categories } = useQuery(categoriesQuery());
   const featured = useQuery(productsQuery({ badge: "featured", limit: 12 }));

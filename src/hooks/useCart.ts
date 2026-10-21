@@ -96,7 +96,43 @@ export function useCart() {
     queryKey: ["cart", user ? user.id : "guest"],
     queryFn: async () => {
       if (user) {
-        // Authenticated user: fetch from database
+        // Authenticated user: if there are pending guest cart items, merge them FIRST
+        const guestItems = getGuestCart();
+        if (guestItems.length > 0) {
+          try {
+            for (const item of guestItems) {
+              let existingQuery = supabase
+                .from("cart_items")
+                .select("id,quantity")
+                .eq("product_id", item.productId)
+                .eq("user_id", user.id);
+              existingQuery = item.variantId
+                ? existingQuery.eq("variant_id", item.variantId)
+                : existingQuery.is("variant_id", null);
+
+              const { data: existing } = await existingQuery.maybeSingle();
+              if (existing) {
+                await supabase
+                  .from("cart_items")
+                  .update({ quantity: existing.quantity + item.quantity })
+                  .eq("id", existing.id);
+              } else {
+                await supabase.from("cart_items").insert({
+                  user_id: user.id,
+                  product_id: item.productId,
+                  variant_id: item.variantId ?? null,
+                  quantity: item.quantity,
+                });
+              }
+            }
+            // Clear only after database merge succeeds
+            clearGuestCart();
+          } catch (mergeErr) {
+            console.error("Failed to merge guest cart into user cart:", mergeErr);
+          }
+        }
+
+        // Fetch complete authenticated cart from database
         const { data, error } = await supabase
           .from("cart_items")
           .select(
@@ -154,52 +190,11 @@ export function useCart() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["cart"] });
 
-  // Merge guest cart into database cart when user logs in
+  // Invalidate cart whenever authentication state changes
   useEffect(() => {
-    if (!user) return;
-    const guestItems = getGuestCart();
-    if (guestItems.length === 0) return;
-
-    let isMounted = true;
-    (async () => {
-      try {
-        for (const item of guestItems) {
-          let existingQuery = supabase
-            .from("cart_items")
-            .select("id,quantity")
-            .eq("product_id", item.productId)
-            .eq("user_id", user.id);
-          existingQuery = item.variantId
-            ? existingQuery.eq("variant_id", item.variantId)
-            : existingQuery.is("variant_id", null);
-
-          const { data: existing } = await existingQuery.maybeSingle();
-          if (existing) {
-            await supabase
-              .from("cart_items")
-              .update({ quantity: existing.quantity + item.quantity })
-              .eq("id", existing.id);
-          } else {
-            await supabase.from("cart_items").insert({
-              user_id: user.id,
-              product_id: item.productId,
-              variant_id: item.variantId ?? null,
-              quantity: item.quantity,
-            });
-          }
-        }
-        clearGuestCart();
-        if (isMounted) {
-          qc.invalidateQueries({ queryKey: ["cart"] });
-        }
-      } catch (err) {
-        console.error("Failed to merge guest cart:", err);
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-    };
+    if (user) {
+      qc.invalidateQueries({ queryKey: ["cart"] });
+    }
   }, [user, qc]);
 
   const add = useMutation({

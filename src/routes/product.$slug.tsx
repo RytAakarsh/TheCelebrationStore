@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { cn } from "@/lib/utils";
+import { saveAuthRedirect } from "@/lib/authRedirect";
 
 export const Route = createFileRoute("/product/$slug")({
   head: ({ params }) => {
@@ -119,6 +120,7 @@ function ProductPage() {
   const handleBuyNow = async () => {
     await add.mutateAsync({ productId: product.id, variantId, quantity });
     if (!user) {
+      saveAuthRedirect("/checkout");
       navigate({ to: "/auth", search: { next: "/checkout" } });
       return;
     }

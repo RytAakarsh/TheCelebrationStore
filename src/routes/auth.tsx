@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BRAND } from "@/lib/brand";
 import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, RotateCw, AlertCircle } from "lucide-react";
+import { getSafeRedirect, saveAuthRedirect, getSavedAuthRedirect, clearAuthRedirect } from "@/lib/authRedirect";
 
 type AuthSearch = {
   next?: string;
@@ -20,7 +21,7 @@ type AuthSearch = {
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): AuthSearch => ({
-    next: typeof search["next"] === "string" && search["next"].startsWith("/") ? search["next"] : undefined,
+    next: typeof search["next"] === "string" ? getSafeRedirect(search["next"], undefined as any) : undefined,
     code: typeof search["code"] === "string" ? search["code"] : undefined,
     error: typeof search["error"] === "string" ? search["error"] : undefined,
     error_code: typeof search["error_code"] === "string" ? search["error_code"] : undefined,
@@ -78,6 +79,15 @@ function AuthPage() {
   const [sent, setSent] = useState(false);
   const [oauthChecking, setOauthChecking] = useState(Boolean(code));
 
+  // Determine and persist destination immediately
+  const effectiveTarget = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+
+  useEffect(() => {
+    if (next) {
+      saveAuthRedirect(next);
+    }
+  }, [next]);
+
   useEffect(() => {
     if (oauthError || oauthErrorDesc) {
       const msg = oauthErrorDesc || oauthError || "Google sign-in was cancelled or encountered an error.";
@@ -87,15 +97,19 @@ function AuthPage() {
     }
   }, [oauthError, oauthErrorDesc]);
 
+  // If user is already logged in or session restored, navigate to destination
   useEffect(() => {
     if (!loading && user) {
-      navigate({ to: (next ?? "/account") as never, replace: true });
+      const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+      clearAuthRedirect();
+      navigate({ to: target as never, replace: true });
     }
   }, [user, loading, next, navigate]);
 
   useEffect(() => {
     if (code) {
       setOauthChecking(true);
+      const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
       supabase.auth.getSession().then(({ data, error }) => {
         if (error) {
           console.error("[Auth] OAuth session exchange error:", error);
@@ -103,7 +117,8 @@ function AuthPage() {
           setOauthChecking(false);
         } else if (data.session) {
           toast.success(`Welcome to ${BRAND.name}! 🎉`);
-          navigate({ to: (next ?? "/account") as never, replace: true });
+          clearAuthRedirect();
+          navigate({ to: target as never, replace: true });
         } else {
           const timer = setTimeout(() => setOauthChecking(false), 2500);
           return () => clearTimeout(timer);
@@ -115,13 +130,14 @@ function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
     try {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`,
+            emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(target)}`,
             data: { full_name: fullName.trim() },
           },
         });
@@ -131,6 +147,8 @@ function AuthPage() {
           toast.success("Account created! Please check your email to activate it.");
         } else {
           toast.success(`Welcome to ${BRAND.name}! 🎉`);
+          clearAuthRedirect();
+          navigate({ to: target as never, replace: true });
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -139,6 +157,8 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Welcome back! 🎉");
+        clearAuthRedirect();
+        navigate({ to: target as never, replace: true });
       }
     } catch (err: any) {
       const msg = err?.message || "";
@@ -162,11 +182,12 @@ function AuthPage() {
     }
     setBusy(true);
     try {
+      const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`,
+          emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(target)}`,
         },
       });
       if (error) throw error;
@@ -180,8 +201,10 @@ function AuthPage() {
 
   async function google() {
     setBusy(true);
+    const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+    saveAuthRedirect(target);
     try {
-      const redirectUrl = `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+      const redirectUrl = `${window.location.origin}/auth?next=${encodeURIComponent(target)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -229,7 +252,7 @@ function AuthPage() {
             </p>
           </div>
 
-          {next === "/checkout" && (
+          {(next === "/checkout" || effectiveTarget === "/checkout") && (
             <div className="rounded-2xl border border-pink/30 bg-pink/5 p-4 text-xs text-ink space-y-1.5 shadow-xs">
               <div className="flex items-center gap-2 font-bold text-pink">
                 <Sparkles className="h-4 w-4 shrink-0 text-gold" />

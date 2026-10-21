@@ -12,6 +12,7 @@ import { BRAND } from "@/lib/brand";
 import { useServerFn } from "@tanstack/react-start";
 import { validateCoupon } from "@/lib/orders.functions";
 import { toast } from "sonner";
+import { saveAuthRedirect } from "@/lib/authRedirect";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -310,6 +311,7 @@ function CartPage() {
           <Button
             onClick={() => {
               if (!user) {
+                saveAuthRedirect("/checkout");
                 navigate({ to: "/auth", search: { next: "/checkout" } });
               } else {
                 navigate({ to: "/checkout" });

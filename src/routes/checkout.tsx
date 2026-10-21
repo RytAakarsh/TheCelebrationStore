@@ -14,6 +14,7 @@ import { placeOrder } from "@/lib/orders.functions";
 import { inr, isValidIndianPhone, isValidPincode } from "@/lib/format";
 import { BRAND } from "@/lib/brand";
 import { supabase } from "@/integrations/supabase/client";
+import { saveAuthRedirect } from "@/lib/authRedirect";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -32,7 +33,7 @@ const SHIPPING_CHARGE = 99;
 
 function CheckoutPage() {
   const { user, loading } = useAuth();
-  const { items, subtotal } = useCart();
+  const { items, subtotal, isLoading } = useCart();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const submitOrder = useServerFn(placeOrder);
@@ -90,7 +91,21 @@ function CheckoutPage() {
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  if (!loading && !user) {
+  // Wait for session restoration and cart synchronization before evaluating guards
+  if (loading || isLoading) {
+    return (
+      <ShopLayout>
+        <div className="container-page py-20 text-center space-y-4">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-3 border-gold border-t-transparent" />
+          <h2 className="font-display text-xl font-bold text-ink">Preparing your celebration order...</h2>
+          <p className="text-xs text-muted-foreground">Securing your cart items and synchronizing checkout.</p>
+        </div>
+      </ShopLayout>
+    );
+  }
+
+  if (!user) {
+    saveAuthRedirect("/checkout");
     return (
       <ShopLayout>
         <PageHeader title="Secure Checkout" subtitle="Sign in to complete your celebration order" />
@@ -98,7 +113,12 @@ function CheckoutPage() {
           title="Sign in or create an account to continue to checkout"
           description="Your cart will be saved! An account is required to safely store your delivery addresses, track live courier updates, and send celebration order receipts."
           action={
-            <Button asChild className="rounded-full bg-pink text-white hover:bg-pink/90 font-bold px-8 shadow-pink" size="lg">
+            <Button
+              asChild
+              className="rounded-full bg-pink text-white hover:bg-pink/90 font-bold px-8 shadow-pink"
+              size="lg"
+              onClick={() => saveAuthRedirect("/checkout")}
+            >
               <Link to="/auth" search={{ next: "/checkout" }}>Sign In or Join to Checkout</Link>
             </Button>
           }
@@ -107,7 +127,7 @@ function CheckoutPage() {
     );
   }
 
-  if (user && items.length === 0) {
+  if (items.length === 0) {
     return (
       <ShopLayout>
         <PageHeader title="Checkout" subtitle="Make every moment special" />
