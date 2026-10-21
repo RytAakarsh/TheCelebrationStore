@@ -25,7 +25,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Check if the current URL has OAuth or email confirmation tokens that Supabase needs to process
+    const hasPendingTokens =
+      typeof window !== "undefined" &&
+      (window.location.hash.includes("access_token") ||
+        window.location.search.includes("code=") ||
+        window.location.hash.includes("error="));
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (hasPendingTokens) {
+      // Allow up to 3.5s for Supabase to exchange hash or code before forcing loading state resolution
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 3500);
+    }
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      if (timer) clearTimeout(timer);
       setSession(next);
       setLoading(false);
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
@@ -36,11 +52,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     });
+
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
+      // If there are pending URL tokens and session is not yet established, do NOT prematurely mark loading as false!
+      // Wait for onAuthStateChange to complete the exchange.
+      if (data.session) {
+        if (timer) clearTimeout(timer);
+        setSession(data.session);
+        setLoading(false);
+      } else if (!hasPendingTokens) {
+        setSession(null);
+        setLoading(false);
+      }
     });
-    return () => sub.subscription.unsubscribe();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      sub.subscription.unsubscribe();
+    };
   }, [queryClient]);
 
   const userId = session?.user.id;

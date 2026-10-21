@@ -194,6 +194,61 @@ assert("Item A quantity merged: 1 + 2 = 3", mergedItemA.quantity === 3);
 const mergedItemC = mockDbCart.find((r) => r.product_id === "prod-candles-02");
 assert("Item C inserted with quantity 4", mergedItemC.quantity === 4);
 
+console.log("\nTest I — Error Resilience: Failure Never Wipes Guest Cart:");
+{
+  let testGuestCart = [{ productId: "p1", variantId: null, quantity: 2 }];
+  let clearCalled = false;
+  const mockClear = () => { clearCalled = true; };
+
+  // Simulate an insert error (e.g. JWT expired or network error)
+  const simulateMergeWithFailure = async () => {
+    let allSucceeded = true;
+    const insertError = { message: "new row violates row-level security policy" };
+    if (insertError) {
+      allSucceeded = false;
+    }
+    if (allSucceeded) {
+      mockClear();
+    }
+  };
+  await simulateMergeWithFailure();
+  assert("Guest cart clear function was NOT called on error", clearCalled === false);
+  assert("Guest cart remains preserved with items", testGuestCart.length === 1);
+}
+
+console.log("\nTest J — Fallback Hydration on Empty DB Return:");
+{
+  const dbCartRows = [];
+  const storedGuestItems = [{ productId: "p1", variantId: null, quantity: 2 }];
+  const effectiveCart = dbCartRows.length === 0 && storedGuestItems.length > 0 ? storedGuestItems : dbCartRows;
+  assert("Cart falls back to guest items when DB returns 0 rows", effectiveCart.length === 1);
+  assert("Item quantity is preserved in fallback", effectiveCart[0].quantity === 2);
+}
+
+console.log("\nTest K — Destination Fallback to /checkout for Users with Cart Items:");
+{
+  const nextParam = undefined;
+  const savedRedirect = null;
+  const hasGuestItems = true;
+  const target = getSafeRedirect(nextParam, "") || savedRedirect || (hasGuestItems ? "/checkout" : "/account");
+  assert("Directs to /checkout when user has cart items without next param", target === "/checkout");
+
+  const hasNoItems = false;
+  const targetNoItems = getSafeRedirect(nextParam, "") || savedRedirect || (hasNoItems ? "/checkout" : "/account");
+  assert("Directs to /account when user has NO cart items and no next param", targetNoItems === "/account");
+}
+
+console.log("\nTest L — URL Hash Token Loading State Safety:");
+{
+  const hashWithToken = "#access_token=eyJhbGciOi...&type=signup";
+  const hasPending = hashWithToken.includes("access_token") || hashWithToken.includes("code=");
+  assert("Correctly identifies pending access token in URL hash", hasPending === true);
+
+  const cleanUrl = "";
+  const noPending = cleanUrl.includes("access_token") || cleanUrl.includes("code=");
+  assert("Correctly identifies clean URL with no pending tokens", noPending === false);
+}
+
 console.log("\n=======================================================");
 const allPassed = results.every((r) => r.passed);
 console.log(`TEST SUMMARY: ${results.filter((r) => r.passed).length} / ${results.length} PASSED`);

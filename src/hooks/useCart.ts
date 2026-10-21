@@ -87,6 +87,144 @@ export function cartLineMoq(row: CartRow) {
 export function cartLineStock(row: CartRow) {
   return Number(row.product_variants?.stock ?? row.products?.stock ?? 0);
 }
+// In-flight merge lock to prevent duplicate concurrent merges across multiple useCart() hook instances
+let mergeLock: Promise<boolean> | null = null;
+
+async function hydrateGuestCart(guestItems: GuestCartItem[]): Promise<CartRow[]> {
+  if (guestItems.length === 0) return [];
+
+  const productIds = Array.from(new Set(guestItems.map((i) => i.productId)));
+  const variantIds = Array.from(
+    new Set(guestItems.map((i) => i.variantId).filter((v): v is string => Boolean(v))),
+  );
+
+  const [prodsRes, varsRes] = await Promise.all([
+    supabase
+      .from("products")
+      .select("id,name,slug,price,mrp,moq,stock,product_images(url,is_primary,position)")
+      .in("id", productIds)
+      .eq("is_published", true)
+      .eq("is_archived", false),
+    variantIds.length > 0
+      ? supabase
+          .from("product_variants")
+          .select("id,name,color_hex,price,mrp,stock,moq")
+          .in("id", variantIds)
+      : Promise.resolve({ data: [] as any[], error: null }),
+  ]);
+
+  const prodsMap = new Map((prodsRes.data ?? []).map((p) => [p.id, p]));
+  const varsMap = new Map((varsRes.data ?? []).map((v) => [v.id, v]));
+
+  const rows: CartRow[] = [];
+  for (const item of guestItems) {
+    const product = prodsMap.get(item.productId);
+    if (!product) continue; // Skip unavailable/deleted products gracefully
+    const variant = item.variantId ? varsMap.get(item.variantId) ?? null : null;
+    rows.push({
+      id: `guest_${item.productId}_${item.variantId ?? "default"}`,
+      product_id: item.productId,
+      variant_id: item.variantId ?? null,
+      quantity: item.quantity,
+      products: product as any,
+      product_variants: variant as any,
+    });
+  }
+  return rows;
+}
+
+async function mergeGuestCartIntoUser(userId: string): Promise<boolean> {
+  const guestItems = getGuestCart();
+  if (guestItems.length === 0) return true;
+
+  try {
+    // 1. Fetch all existing cart items for this user in a single batch query
+    const { data: dbItems, error: fetchErr } = await supabase
+      .from("cart_items")
+      .select("id, product_id, variant_id, quantity")
+      .eq("user_id", userId);
+
+    if (fetchErr) {
+      console.error("[useCart] Could not fetch existing cart items for merge:", fetchErr);
+      return false;
+    }
+
+    // 2. Map existing items by unique composite key: `${product_id}__${variant_id ?? 'null'}`
+    // Also identify and clean up any preexisting duplicate rows
+    const dbItemMap = new Map<string, { id: string; quantity: number }>();
+    const duplicateIdsToDelete: string[] = [];
+
+    for (const row of dbItems ?? []) {
+      const key = `${row.product_id}__${row.variant_id ?? "null"}`;
+      if (!dbItemMap.has(key)) {
+        dbItemMap.set(key, { id: row.id, quantity: row.quantity });
+      } else {
+        // Merge duplicate row quantity into first entry and schedule duplicate row deletion
+        const first = dbItemMap.get(key)!;
+        first.quantity += row.quantity;
+        duplicateIdsToDelete.push(row.id);
+      }
+    }
+
+    if (duplicateIdsToDelete.length > 0) {
+      await supabase.from("cart_items").delete().in("id", duplicateIdsToDelete);
+    }
+
+    // 3. Merge each guest item safely
+    let allSucceeded = true;
+
+    for (const item of guestItems) {
+      const key = `${item.productId}__${item.variantId ?? "null"}`;
+      const existing = dbItemMap.get(key);
+
+      if (existing) {
+        const newQty = existing.quantity + item.quantity;
+        const { error: updateErr } = await supabase
+          .from("cart_items")
+          .update({ quantity: newQty })
+          .eq("id", existing.id);
+
+        if (updateErr) {
+          console.error(`[useCart] Failed to update item ${item.productId}:`, updateErr);
+          allSucceeded = false;
+        } else {
+          existing.quantity = newQty;
+        }
+      } else {
+        const { data: inserted, error: insertErr } = await supabase
+          .from("cart_items")
+          .insert({
+            user_id: userId,
+            product_id: item.productId,
+            variant_id: item.variantId ?? null,
+            quantity: item.quantity,
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (insertErr) {
+          console.error(`[useCart] Failed to insert item ${item.productId}:`, insertErr);
+          allSucceeded = false;
+        } else if (inserted) {
+          dbItemMap.set(key, { id: inserted.id, quantity: item.quantity });
+        }
+      }
+    }
+
+    // 4. CRITICAL: Only clear guest cart if ALL operations succeeded with zero errors
+    if (allSucceeded) {
+      clearGuestCart();
+      console.log(`[useCart] Successfully merged ${guestItems.length} guest cart items into user ${userId}`);
+      return true;
+    } else {
+      console.warn("[useCart] One or more cart items failed to merge. Keeping guest cart intact in localStorage for safety.");
+      return false;
+    }
+  } catch (err) {
+    console.error("[useCart] Unexpected error during cart merge:", err);
+    return false;
+  }
+}
 
 export function useCart() {
   const { user } = useAuth();
@@ -96,40 +234,15 @@ export function useCart() {
     queryKey: ["cart", user ? user.id : "guest"],
     queryFn: async () => {
       if (user) {
-        // Authenticated user: if there are pending guest cart items, merge them FIRST
+        // Authenticated user: merge pending guest cart items using single-flight mutex
         const guestItems = getGuestCart();
         if (guestItems.length > 0) {
-          try {
-            for (const item of guestItems) {
-              let existingQuery = supabase
-                .from("cart_items")
-                .select("id,quantity")
-                .eq("product_id", item.productId)
-                .eq("user_id", user.id);
-              existingQuery = item.variantId
-                ? existingQuery.eq("variant_id", item.variantId)
-                : existingQuery.is("variant_id", null);
-
-              const { data: existing } = await existingQuery.maybeSingle();
-              if (existing) {
-                await supabase
-                  .from("cart_items")
-                  .update({ quantity: existing.quantity + item.quantity })
-                  .eq("id", existing.id);
-              } else {
-                await supabase.from("cart_items").insert({
-                  user_id: user.id,
-                  product_id: item.productId,
-                  variant_id: item.variantId ?? null,
-                  quantity: item.quantity,
-                });
-              }
-            }
-            // Clear only after database merge succeeds
-            clearGuestCart();
-          } catch (mergeErr) {
-            console.error("Failed to merge guest cart into user cart:", mergeErr);
+          if (!mergeLock) {
+            mergeLock = mergeGuestCartIntoUser(user.id).finally(() => {
+              mergeLock = null;
+            });
           }
+          await mergeLock;
         }
 
         // Fetch complete authenticated cart from database
@@ -138,64 +251,35 @@ export function useCart() {
           .select(
             "id,product_id,variant_id,quantity,products(id,name,slug,price,mrp,moq,stock,product_images(url,is_primary,position)),product_variants(id,name,color_hex,price,mrp,stock,moq)",
           )
+          .eq("user_id", user.id)
           .order("created_at");
-        if (error) throw new Error(error.message);
-        return (data ?? []) as unknown as CartRow[];
+
+        if (error) {
+          console.error("[useCart] Error fetching authenticated cart:", error);
+        }
+
+        const dbRows = (data ?? []) as unknown as CartRow[];
+
+        // FALLBACK RESILIENCE:
+        // If DB returned 0 rows, but localStorage still has guest cart items (e.g. merge failed or is pending),
+        // hydrate and return the guest cart items so the customer NEVER sees an empty cart or lost checkout!
+        const remainingGuestItems = getGuestCart();
+        if (dbRows.length === 0 && remainingGuestItems.length > 0) {
+          console.warn("[useCart] Authenticated cart is empty in DB; falling back to hydrated guest cart.");
+          return await hydrateGuestCart(remainingGuestItems);
+        }
+
+        return dbRows;
       }
 
       // Guest user: fetch from localStorage and hydrate product details
       const guestItems = getGuestCart();
       if (guestItems.length === 0) return [] as CartRow[];
-
-      const productIds = Array.from(new Set(guestItems.map((i) => i.productId)));
-      const variantIds = Array.from(
-        new Set(guestItems.map((i) => i.variantId).filter((v): v is string => Boolean(v))),
-      );
-
-      const [prodsRes, varsRes] = await Promise.all([
-        supabase
-          .from("products")
-          .select("id,name,slug,price,mrp,moq,stock,product_images(url,is_primary,position)")
-          .in("id", productIds)
-          .eq("is_published", true)
-          .eq("is_archived", false),
-        variantIds.length > 0
-          ? supabase
-              .from("product_variants")
-              .select("id,name,color_hex,price,mrp,stock,moq")
-              .in("id", variantIds)
-          : Promise.resolve({ data: [] as any[], error: null }),
-      ]);
-
-      const prodsMap = new Map((prodsRes.data ?? []).map((p) => [p.id, p]));
-      const varsMap = new Map((varsRes.data ?? []).map((v) => [v.id, v]));
-
-      const rows: CartRow[] = [];
-      for (const item of guestItems) {
-        const product = prodsMap.get(item.productId);
-        if (!product) continue; // Skip unavailable/deleted products gracefully
-        const variant = item.variantId ? varsMap.get(item.variantId) ?? null : null;
-        rows.push({
-          id: `guest_${item.productId}_${item.variantId ?? "default"}`,
-          product_id: item.productId,
-          variant_id: item.variantId ?? null,
-          quantity: item.quantity,
-          products: product as any,
-          product_variants: variant as any,
-        });
-      }
-      return rows;
+      return await hydrateGuestCart(guestItems);
     },
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["cart"] });
-
-  // Invalidate cart whenever authentication state changes
-  useEffect(() => {
-    if (user) {
-      qc.invalidateQueries({ queryKey: ["cart"] });
-    }
-  }, [user, qc]);
 
   const add = useMutation({
     mutationFn: async (input: { productId: string; variantId?: string | null; quantity: number }) => {
@@ -229,7 +313,9 @@ export function useCart() {
       existingQuery = input.variantId
         ? existingQuery.eq("variant_id", input.variantId)
         : existingQuery.is("variant_id", null);
-      const { data: existing } = await existingQuery.maybeSingle();
+      const { data: existingList } = await existingQuery;
+      const existing = existingList && existingList.length > 0 ? existingList[0] : null;
+
       if (existing) {
         const { error } = await supabase
           .from("cart_items")

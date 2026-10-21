@@ -12,6 +12,7 @@ import { homeSectionsQuery, offerProductsQuery, productsQuery, categoriesQuery }
 import { BRAND, whatsappLink } from "@/lib/brand";
 import { useAuth } from "@/hooks/useAuth";
 import { getSavedAuthRedirect, clearAuthRedirect } from "@/lib/authRedirect";
+import { getGuestCart } from "@/hooks/useCart";
 import { Sparkles, Gift, ArrowRight, MessageCircle, MapPin, PartyPopper } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -37,13 +38,15 @@ function Home() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
-  // If returning from OAuth redirect that landed on Site URL, route to pending destination
+  // If returning from OAuth or auth callback that landed on Site URL, route to pending destination or checkout
   useEffect(() => {
     if (!loading && user) {
       const pendingDestination = getSavedAuthRedirect();
-      if (pendingDestination) {
+      const hasGuestItems = typeof window !== "undefined" && getGuestCart().length > 0;
+      const target = pendingDestination || (hasGuestItems ? "/checkout" : null);
+      if (target) {
         clearAuthRedirect();
-        navigate({ to: pendingDestination as never, replace: true });
+        navigate({ to: target as never, replace: true });
       }
     }
   }, [user, loading, navigate]);

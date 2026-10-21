@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { BRAND } from "@/lib/brand";
 import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, RotateCw, AlertCircle } from "lucide-react";
 import { getSafeRedirect, saveAuthRedirect, getSavedAuthRedirect, clearAuthRedirect } from "@/lib/authRedirect";
+import { getGuestCart } from "@/hooks/useCart";
 
 type AuthSearch = {
   next?: string;
@@ -77,10 +78,17 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const [oauthChecking, setOauthChecking] = useState(Boolean(code));
 
-  // Determine and persist destination immediately
-  const effectiveTarget = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+  const isHashAuth =
+    typeof window !== "undefined" &&
+    (window.location.hash.includes("access_token") || window.location.hash.includes("type="));
+  const [oauthChecking, setOauthChecking] = useState(Boolean(code) || isHashAuth);
+
+  const getDestination = () => {
+    return getSafeRedirect(next) || getSavedAuthRedirect() || (getGuestCart().length > 0 ? "/checkout" : "/account");
+  };
+
+  const effectiveTarget = getDestination();
 
   useEffect(() => {
     if (next) {
@@ -90,7 +98,7 @@ function AuthPage() {
 
   useEffect(() => {
     if (oauthError || oauthErrorDesc) {
-      const msg = oauthErrorDesc || oauthError || "Google sign-in was cancelled or encountered an error.";
+      const msg = oauthErrorDesc || oauthError || "Authentication was cancelled or encountered an error.";
       console.warn("[Auth] OAuth error callback:", { oauthError, oauthErrorDesc });
       toast.error(msg);
       setOauthChecking(false);
@@ -100,37 +108,65 @@ function AuthPage() {
   // If user is already logged in or session restored, navigate to destination
   useEffect(() => {
     if (!loading && user) {
-      const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+      const target = getDestination();
       clearAuthRedirect();
       navigate({ to: target as never, replace: true });
     }
   }, [user, loading, next, navigate]);
 
   useEffect(() => {
-    if (code) {
+    const hasHash =
+      typeof window !== "undefined" &&
+      (window.location.hash.includes("access_token") || window.location.hash.includes("type="));
+
+    if (code || hasHash) {
       setOauthChecking(true);
-      const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
-      supabase.auth.getSession().then(({ data, error }) => {
-        if (error) {
-          console.error("[Auth] OAuth session exchange error:", error);
-          toast.error("Could not complete authentication. Please try logging in again.");
+      const target = getDestination();
+      saveAuthRedirect(target);
+
+      const checkAuth = async () => {
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            console.error("[Auth] Session resolution error:", error);
+            toast.error("Could not complete authentication. Please try logging in again.");
+            setOauthChecking(false);
+            return;
+          }
+
+          if (data.session) {
+            toast.success(`Welcome to ${BRAND.name}! 🎉`);
+            clearAuthRedirect();
+            navigate({ to: target as never, replace: true });
+          } else {
+            // Allow up to 3.5 seconds for async token extraction from URL hash
+            const timer = setTimeout(async () => {
+              const { data: retryData } = await supabase.auth.getSession();
+              if (retryData.session) {
+                toast.success(`Welcome to ${BRAND.name}! 🎉`);
+                clearAuthRedirect();
+                navigate({ to: target as never, replace: true });
+              } else {
+                setOauthChecking(false);
+              }
+            }, 3000);
+            return () => clearTimeout(timer);
+          }
+        } catch (e) {
+          console.error("[Auth] Unexpected token verification error:", e);
           setOauthChecking(false);
-        } else if (data.session) {
-          toast.success(`Welcome to ${BRAND.name}! 🎉`);
-          clearAuthRedirect();
-          navigate({ to: target as never, replace: true });
-        } else {
-          const timer = setTimeout(() => setOauthChecking(false), 2500);
-          return () => clearTimeout(timer);
         }
-      });
+      };
+
+      checkAuth();
     }
   }, [code, next, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+    const target = getDestination();
+    saveAuthRedirect(target);
     try {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
@@ -182,7 +218,7 @@ function AuthPage() {
     }
     setBusy(true);
     try {
-      const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+      const target = getDestination();
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim(),
@@ -201,7 +237,7 @@ function AuthPage() {
 
   async function google() {
     setBusy(true);
-    const target = getSafeRedirect(next) || getSavedAuthRedirect() || "/account";
+    const target = getDestination();
     saveAuthRedirect(target);
     try {
       const redirectUrl = `${window.location.origin}/auth?next=${encodeURIComponent(target)}`;
@@ -267,8 +303,8 @@ function AuthPage() {
           {oauthChecking && !user ? (
             <div className="py-8 text-center space-y-4">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" />
-              <p className="text-sm font-semibold text-ink">Completing Google Sign In...</p>
-              <p className="text-xs text-muted-foreground">Please wait a moment while we set up your celebration account.</p>
+              <p className="text-sm font-semibold text-ink">Completing authentication...</p>
+              <p className="text-xs text-muted-foreground">Please wait a moment while we set up your celebration account and sync your cart.</p>
             </div>
           ) : (
             <>
@@ -312,7 +348,14 @@ function AuthPage() {
           {sent ? (
             <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5 text-xs text-emerald-800 space-y-3 text-center">
               <p className="font-bold text-sm">Confirmation link sent!</p>
-              <p>We've sent an activation link to <strong>{email}</strong>. Please check your inbox and click the link to activate your celebration account.</p>
+              <p>We've sent an activation link to <strong>{email}</strong>. Please check your inbox (and spam folder) to activate your celebration account.</p>
+              {typeof window !== "undefined" && getGuestCart().length > 0 && (
+                <div className="rounded-xl bg-white/90 border border-emerald-300/70 p-3 text-left text-[11px] text-emerald-950 space-y-1 shadow-xs">
+                  <p className="font-semibold text-emerald-900">🛒 Your cart items are safely preserved!</p>
+                  <p className="text-muted-foreground">When you click the activation link in your email, you will be redirected straight to checkout with all your items ready.</p>
+                  <p className="text-[10px] text-muted-foreground italic">Tip: If confirming on your phone, open the link in your regular browser (Chrome/Safari) to continue seamlessly.</p>
+                </div>
+              )}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                 <Button
                   type="button"
