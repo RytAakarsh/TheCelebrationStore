@@ -41,8 +41,8 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (!cart || cart.length === 0) throw new Error("Your cart is empty.");
 
     const { data: settings } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
-    const shippingCharge = Number(settings?.shipping_charge ?? 0);
-    const freeThreshold = Number(settings?.free_shipping_threshold ?? 0);
+    const shippingCharge = Number(settings?.shipping_charge ?? 99);
+    const freeThreshold = Number(settings?.free_shipping_threshold ?? 999);
     if (data.paymentMethod === "cod" && settings && settings.cod_enabled === false) {
       throw new Error("Cash on delivery is currently unavailable.");
     }
@@ -92,12 +92,10 @@ export const placeOrder = createServerFn({ method: "POST" })
       }
 
       const price = Number(variant?.price ?? product.price);
-      const moq = Number(variant?.moq ?? product.moq ?? 1);
       const stock = Number(variant?.stock ?? product.stock ?? 0);
       const qty = Number(row.quantity);
 
       if (!Number.isInteger(qty) || qty < 1) throw new Error("Invalid quantity in cart.");
-      if (qty < moq) throw new Error(`Minimum order quantity for ${product.name} is ${moq}.`);
       if (product.track_inventory && !product.allow_backorder && qty > stock) {
         throw new Error(`Only ${stock} left of ${product.name}.`);
       }
@@ -149,7 +147,9 @@ export const placeOrder = createServerFn({ method: "POST" })
     }
 
     const payable = subtotal - discount;
-    const shipping = freeThreshold > 0 && payable >= freeThreshold ? 0 : shippingCharge;
+    const effectiveThreshold = freeThreshold > 0 ? freeThreshold : 999;
+    const effectiveCharge = shippingCharge > 0 ? shippingCharge : 99;
+    const shipping = payable >= effectiveThreshold ? 0 : effectiveCharge;
     const total = Math.round((payable + shipping) * 100) / 100;
 
     const { data: profile } = await supabase.from("profiles").select("email").eq("id", userId).maybeSingle();

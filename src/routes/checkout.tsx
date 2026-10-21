@@ -28,7 +28,7 @@ export const Route = createFileRoute("/checkout")({
 });
 
 const FREE_SHIPPING_THRESHOLD = 999;
-const SHIPPING_CHARGE = 79;
+const SHIPPING_CHARGE = 99;
 
 function CheckoutPage() {
   const { user, loading } = useAuth();
@@ -93,13 +93,13 @@ function CheckoutPage() {
   if (!loading && !user) {
     return (
       <ShopLayout>
-        <PageHeader title="Checkout" subtitle="Sign in to complete your celebration order" />
+        <PageHeader title="Secure Checkout" subtitle="Sign in to complete your celebration order" />
         <EmptyState
-          title="Sign in to checkout"
-          description="Login or create an account with Google to securely store your address and order tracking."
+          title="Sign in or create an account to continue to checkout"
+          description="Your cart will be saved! An account is required to safely store your delivery addresses, track live courier updates, and send celebration order receipts."
           action={
             <Button asChild className="rounded-full bg-pink text-white hover:bg-pink/90 font-bold px-8 shadow-pink" size="lg">
-              <Link to="/auth" search={{ next: "/checkout" }}>Sign In with Google / Email</Link>
+              <Link to="/auth" search={{ next: "/checkout" }}>Sign In or Join to Checkout</Link>
             </Button>
           }
         />
@@ -495,11 +495,17 @@ function CheckoutPage() {
             </div>
 
             <div className="flex justify-between text-muted-foreground">
-              <dt>Shipping Fee</dt>
+              <dt>Delivery Charges</dt>
               <dd className="font-semibold text-ink">
-                {isFreeShipping ? <span className="text-emerald-600 font-bold">FREE</span> : inr(shipping)}
+                {isFreeShipping ? <span className="text-emerald-600 font-bold">FREE DELIVERY</span> : inr(shipping)}
               </dd>
             </div>
+
+            {!isFreeShipping && (
+              <p className="text-[11px] text-pink font-semibold">
+                Add {inr(FREE_SHIPPING_THRESHOLD - subtotal)} more to unlock FREE DELIVERY!
+              </p>
+            )}
 
             <div className="flex justify-between border-t border-border pt-3 font-display text-xl font-bold text-ink">
               <dt>Total Payable</dt>

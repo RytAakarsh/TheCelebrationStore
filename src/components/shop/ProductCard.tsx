@@ -112,12 +112,7 @@ export function ProductCard({ product, className }: { product: CardProduct; clas
         </div>
 
         <div className="flex items-center justify-between gap-2 min-h-4 text-[11px]">
-          {product.moq > 1 ? (
-            <span className="font-medium text-muted-foreground">MOQ: {product.moq} pcs</span>
-          ) : (
-            <span />
-          )}
-          {colors.length > 0 && (
+          {colors.length > 0 ? (
             <span className="flex gap-1">
               {colors.map((c) => (
                 <span
@@ -128,6 +123,8 @@ export function ProductCard({ product, className }: { product: CardProduct; clas
                 />
               ))}
             </span>
+          ) : (
+            <span />
           )}
         </div>
 
@@ -137,11 +134,7 @@ export function ProductCard({ product, className }: { product: CardProduct; clas
           className="mt-1.5 w-full rounded-xl"
           disabled={outOfStock || add.isPending}
           onClick={() => {
-            if (!user) {
-              toast.error("Please sign in to add items to your cart.");
-              return;
-            }
-            add.mutate({ productId: product.id, quantity: Math.max(1, product.moq) });
+            add.mutate({ productId: product.id, quantity: 1 });
           }}
         >
           <ShoppingBag className="h-3.5 w-3.5" />

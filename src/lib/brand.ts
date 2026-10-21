@@ -14,7 +14,7 @@ export const BRAND = {
     "Visakhapatnam - 530001",
     "Andhra Pradesh, India",
   ],
-  strip: "Make Every Moment Special ✨ | Flat ₹79 Delivery Across India | Free Shipping over ₹999 🎉",
+  strip: "Make Every Moment Special ✨ | Flat ₹99 Delivery Across India | FREE DELIVERY over ₹999 🎉",
   logoUrl: "/the-celebration-store-logo.png",
   logoFullUrl: "/the-celebration-store-logo-full.png",
   city: "Visakhapatnam",

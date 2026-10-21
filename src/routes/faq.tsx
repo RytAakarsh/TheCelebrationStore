@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "What is your shipping charge and free shipping policy?",
-    a: "We offer FREE Standard Delivery on all orders of ₹999 and above! For orders below ₹999, a nominal flat delivery charge of ₹79 is applied at checkout."
+    a: "We offer FREE Standard Delivery on all orders of ₹999 and above! For orders below ₹999, a nominal flat delivery charge of ₹99 is applied at checkout."
   },
   {
     q: "Do you accept bulk orders for return gifts and wedding celebrations?",

@@ -28,9 +28,9 @@ export function Logo({ className, variant = "header", height }: LogoProps) {
         alt={`${BRAND.name} — ${BRAND.tagline}`}
         className={cn(
           "w-auto object-contain select-none",
-          variant === "header" && "h-11 sm:h-12 md:h-13 max-w-[175px] sm:max-w-[205px] md:max-w-[240px]",
-          variant === "mobile" && "h-10 sm:h-11 max-w-[165px]",
-          variant === "footer" && "h-12 sm:h-13 max-w-[190px]",
+          variant === "header" && "h-[50px] sm:h-[56px] md:h-[62px] max-w-[200px] sm:max-w-[235px] md:max-w-[270px]",
+          variant === "mobile" && "h-[46px] sm:h-[52px] max-w-[185px] sm:max-w-[220px]",
+          variant === "footer" && "h-12 sm:h-14 max-w-[200px]",
           variant === "admin" && "h-9 sm:h-10 max-w-[150px]",
           variant === "icon-only" && "h-10 w-10 object-cover rounded-full",
           variant === "full" && "h-14 sm:h-16 max-w-[240px]"

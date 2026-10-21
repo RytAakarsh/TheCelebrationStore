@@ -56,7 +56,7 @@ function ProductPage() {
   const moq = Number(variant?.moq ?? product?.moq ?? 1);
   const sku = variant?.sku ?? product?.sku ?? "";
   const [qty, setQty] = useState(1);
-  const quantity = Math.max(qty, moq);
+  const quantity = Math.max(qty, 1);
 
   const images = useMemo(() => {
     const variantImgs = (variant?.variant_images ?? []).map((v) => v.url);
@@ -117,12 +117,11 @@ function ProductPage() {
   };
 
   const handleBuyNow = async () => {
+    await add.mutateAsync({ productId: product.id, variantId, quantity });
     if (!user) {
-      toast.error("Please sign in to proceed with checkout.");
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { next: "/checkout" } });
       return;
     }
-    await add.mutateAsync({ productId: product.id, variantId, quantity });
     navigate({ to: "/checkout" });
   };
 
@@ -242,7 +241,7 @@ function ProductPage() {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Inclusive of all taxes • Flat ₹79 shipping across India • Free shipping over ₹999
+              Inclusive of all taxes • Flat ₹99 delivery across India • Free delivery over ₹999
             </p>
           </div>
 
@@ -298,8 +297,9 @@ function ProductPage() {
               <button
                 type="button"
                 aria-label="Decrease quantity"
-                onClick={() => setQty(Math.max(moq, quantity - 1))}
-                className="grid h-11 w-11 place-items-center text-muted-foreground hover:text-ink"
+                disabled={quantity <= 1}
+                onClick={() => setQty(Math.max(1, quantity - 1))}
+                className="grid h-11 w-11 place-items-center text-muted-foreground hover:text-ink disabled:opacity-40"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -315,11 +315,6 @@ function ProductPage() {
             </div>
 
             <div className="text-xs space-y-0.5">
-              {moq > 1 && (
-                <p className="font-bold text-orange">
-                  ⚠️ Minimum Order Quantity: {moq} pieces
-                </p>
-              )}
               <p className={cn("font-semibold", outOfStock ? "text-destructive" : stock <= 5 ? "text-orange" : "text-emerald-600")}>
                 {outOfStock ? "Out of Stock" : stock <= 5 ? `Only ${stock} left in stock - order soon` : "✓ In Stock, Ready to Dispatch"}
               </p>
@@ -332,10 +327,6 @@ function ProductPage() {
               size="lg"
               disabled={outOfStock || add.isPending}
               onClick={() => {
-                if (!user) {
-                  toast.error("Please sign in to add items to your cart.");
-                  return;
-                }
                 add.mutate({ productId: product.id, variantId, quantity });
               }}
               variant="coral"
@@ -379,7 +370,7 @@ function ProductPage() {
           <div className="rounded-2xl border border-border bg-card p-4 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-gold shrink-0" />
-              <span>Flat ₹79 Pan-India Delivery</span>
+              <span>Flat ₹99 Pan-India Delivery</span>
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -434,10 +425,6 @@ function ProductPage() {
                 <span className="font-semibold text-ink">{product.categories?.name ?? "Celebration Supplies"}</span>
               </div>
               <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-muted-foreground">Minimum Order:</span>
-                <span className="font-semibold text-ink">{moq} pieces</span>
-              </div>
-              <div className="flex justify-between border-b border-border pb-2">
                 <span className="text-muted-foreground">Inventory Status:</span>
                 <span className="font-semibold text-emerald-600">{stock > 0 ? "Available" : "Out of Stock"}</span>
               </div>
@@ -455,8 +442,8 @@ function ProductPage() {
           <TabsContent value="shipping" className="mt-6 rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-4 text-xs text-muted-foreground leading-relaxed">
             <h3 className="font-display text-lg font-bold text-ink">Shipping &amp; Delivery Information</h3>
             <ul className="space-y-2 list-disc pl-5">
-              <li><strong>Flat Shipping Rate:</strong> Standard shipping at flat ₹79 across India.</li>
-              <li><strong>Free Shipping:</strong> Automatically applied for cart subtotals of ₹999 or more.</li>
+              <li><strong>Flat Shipping Rate:</strong> Standard delivery at flat ₹99 across India.</li>
+              <li><strong>Free Delivery:</strong> Automatically applied for cart subtotals of ₹999 or more.</li>
               <li><strong>Delivery Timeline:</strong> Orders are processed within 24-48 hours. Standard transit takes 3–5 business days depending on location.</li>
               <li><strong>Store Pickup / Local Delivery:</strong> Available from our Poorna Market, Visakhapatnam store. Contact us on WhatsApp to arrange local pickup.</li>
               <li><strong>Damage / Transit Guarantee:</strong> In the rare event of transit damage, please notify us within 24 hours with an unboxing photo/video for immediate replacement.</li>
@@ -526,10 +513,6 @@ function ProductPage() {
               size="sm"
               disabled={outOfStock || add.isPending}
               onClick={() => {
-                if (!user) {
-                  toast.error("Please sign in to add to cart.");
-                  return;
-                }
                 add.mutate({ productId: product.id, variantId, quantity });
               }}
               variant="coral"

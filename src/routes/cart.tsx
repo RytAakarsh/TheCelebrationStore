@@ -26,10 +26,10 @@ export const Route = createFileRoute("/cart")({
 });
 
 const FREE_SHIPPING_THRESHOLD = 999;
-const SHIPPING_CHARGE = 79;
+const SHIPPING_CHARGE = 99;
 
 function CartPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const { items, subtotal, mrpTotal, setQuantity, remove, isLoading } = useCart();
   const navigate = useNavigate();
 
@@ -37,23 +37,6 @@ function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const checkCouponFn = useServerFn(validateCoupon);
-
-  if (!loading && !user) {
-    return (
-      <ShopLayout>
-        <PageHeader title="Your Celebration Cart" subtitle="Save items to your account and checkout securely" />
-        <EmptyState
-          title="Sign in to view your celebration cart"
-          description="Your cart is automatically saved to your account across your phone and computer."
-          action={
-            <Button asChild className="rounded-full bg-pink text-white hover:bg-pink/90 font-bold shadow-pink px-6" size="lg">
-              <Link to="/auth" search={{ next: "/cart" }}>Sign in / Create Account</Link>
-            </Button>
-          }
-        />
-      </ShopLayout>
-    );
-  }
 
   if (!isLoading && items.length === 0) {
     return (
@@ -117,15 +100,30 @@ function CartPage() {
       <div className="container-page grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         {/* Left Column: Cart Items List */}
         <div className="space-y-4">
+          {/* Guest cart notice */}
+          {!user && (
+            <div className="rounded-2xl border border-pink/30 bg-pink/5 p-3.5 text-xs text-ink flex items-center justify-between gap-3">
+              <div>
+                <span className="font-bold text-pink">Shopping as Guest</span>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Your cart is saved on this device. Sign in or continue to checkout to place your order.
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline" className="rounded-xl text-xs shrink-0 font-bold">
+                <Link to="/auth" search={{ next: "/cart" }}>Sign In</Link>
+              </Button>
+            </div>
+          )}
+
           {/* Free Shipping Progress Indicator */}
           <div className="rounded-2xl border border-gold/30 bg-gradient-to-r from-amber-500/10 via-pink-500/5 to-amber-500/10 p-4 shadow-sm">
             <div className="flex items-center gap-2.5 text-xs font-semibold text-ink">
               <Truck className="h-4 w-4 text-gold shrink-0" />
               {isFreeShipping ? (
-                <span className="text-emerald-700 font-bold">🎉 Congratulations! You qualify for FREE Shipping across India!</span>
+                <span className="text-emerald-700 font-bold">🎉 Congratulations! You qualify for FREE DELIVERY across India!</span>
               ) : (
                 <span>
-                  Add <strong className="text-pink">{inr(amountNeededForFreeShipping)}</strong> more to get <strong>FREE Delivery</strong>!
+                  Add <strong className="text-pink">{inr(amountNeededForFreeShipping)}</strong> more to unlock <strong>FREE DELIVERY</strong>!
                 </span>
               )}
             </div>
@@ -143,7 +141,6 @@ function CartPage() {
               const image = [...(row.products?.product_images ?? [])].sort(
                 (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position,
               )[0]?.url;
-              const moq = cartLineMoq(row);
               const stock = cartLineStock(row);
               const unitPrice = cartLinePrice(row);
               const itemTotal = unitPrice * row.quantity;
@@ -178,10 +175,6 @@ function CartPage() {
                       <span className="text-muted-foreground">× {row.quantity} pcs</span>
                     </div>
 
-                    {moq > 1 && (
-                      <p className="text-[11px] text-orange font-semibold">MOQ: {moq} pieces</p>
-                    )}
-
                     {row.quantity > stock && (
                       <p className="text-xs font-semibold text-destructive">Only {stock} left in stock</p>
                     )}
@@ -193,8 +186,8 @@ function CartPage() {
                           type="button"
                           aria-label="Decrease quantity"
                           className="grid h-8 w-8 place-items-center text-muted-foreground hover:text-ink disabled:opacity-40"
-                          disabled={row.quantity <= moq}
-                          onClick={() => setQuantity.mutate({ id: row.id, quantity: Math.max(moq, row.quantity - 1) })}
+                          disabled={row.quantity <= 1}
+                          onClick={() => setQuantity.mutate({ id: row.id, quantity: Math.max(1, row.quantity - 1) })}
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
@@ -298,12 +291,12 @@ function CartPage() {
             )}
 
             <div className="flex justify-between text-muted-foreground">
-              <dt>Estimated Delivery</dt>
+              <dt>Delivery Charges</dt>
               <dd className="font-medium text-ink">
                 {isFreeShipping ? (
-                  <span className="font-bold text-emerald-600">FREE</span>
+                  <span className="font-bold text-emerald-600">FREE DELIVERY</span>
                 ) : (
-                  <span>{inr(SHIPPING_CHARGE)}</span>
+                  <span className="font-semibold text-ink">{inr(SHIPPING_CHARGE)}</span>
                 )}
               </dd>
             </div>
@@ -315,7 +308,13 @@ function CartPage() {
           </dl>
 
           <Button
-            onClick={() => navigate({ to: "/checkout" })}
+            onClick={() => {
+              if (!user) {
+                navigate({ to: "/auth", search: { next: "/checkout" } });
+              } else {
+                navigate({ to: "/checkout" });
+              }
+            }}
             variant="gold"
             className="w-full rounded-2xl text-sm h-12"
             size="lg"

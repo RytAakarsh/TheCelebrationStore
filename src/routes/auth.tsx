@@ -229,6 +229,18 @@ function AuthPage() {
             </p>
           </div>
 
+          {next === "/checkout" && (
+            <div className="rounded-2xl border border-pink/30 bg-pink/5 p-4 text-xs text-ink space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-2 font-bold text-pink">
+                <Sparkles className="h-4 w-4 shrink-0 text-gold" />
+                <span>Sign in or create an account to continue to checkout</span>
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Your cart will be saved! An account is required to safely store your delivery addresses, track courier updates, and send celebration receipts.
+              </p>
+            </div>
+          )}
+
           {oauthChecking && !user ? (
             <div className="py-8 text-center space-y-4">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" />

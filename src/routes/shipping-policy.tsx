@@ -21,7 +21,7 @@ export const Route = createFileRoute("/shipping-policy")({
         },
         {
           heading: "2. Shipping Charges & Free Delivery",
-          body: `• Orders ₹999 and above enjoy FREE Standard Delivery.\n• For orders below ₹999, a nominal flat shipping fee of ₹79 is applied at checkout.\n• Bulk event or oversized decor shipments may have customized freight quotes communicated in advance.`,
+          body: `• Orders ₹999 and above enjoy FREE Standard Delivery.\n• For orders below ₹999, a nominal flat shipping fee of ₹99 is applied at checkout.\n• Bulk event or oversized decor shipments may have customized freight quotes communicated in advance.`,
         },
         {
           heading: "3. Dispatch & Delivery Timelines",

@@ -1,12 +1,16 @@
 import type { ReactNode, ComponentType } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, ChevronRight } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { BottomNav } from "./BottomNav";
 import { whatsappLink } from "@/lib/brand";
+import { cn } from "@/lib/utils";
 
 export function ShopLayout({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isProductPage = pathname.startsWith("/product");
+
   return (
     <div className="flex min-h-screen flex-col bg-[#FFFDF8]">
       <Header />
@@ -18,7 +22,12 @@ export function ShopLayout({ children }: { children: ReactNode }) {
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"
-        className="fixed bottom-20 right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-emerald-600 text-white shadow-lift border-2 border-white/80 transition-all duration-300 hover:scale-110 hover:bg-emerald-500 active:scale-95 lg:bottom-6"
+        className={cn(
+          "fixed right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-emerald-600 text-white shadow-lift border-2 border-white/80 transition-all duration-300 hover:scale-110 hover:bg-emerald-500 active:scale-95 lg:bottom-6 lg:right-6",
+          isProductPage
+            ? "bottom-[calc(8.75rem+env(safe-area-inset-bottom,0px))]"
+            : "bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))]"
+        )}
       >
         <MessageCircle className="h-6 w-6" />
       </a>

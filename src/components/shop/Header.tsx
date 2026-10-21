@@ -67,9 +67,9 @@ export function Header() {
         </div>
 
         {/* Main Header Bar */}
-        <div className="container-page flex items-center justify-between gap-3 md:gap-6 py-2.5 sm:py-3">
+        <div className="container-page flex items-center justify-between gap-2.5 sm:gap-4 md:gap-6 py-2 sm:py-2.5">
           {/* Left: Mobile menu toggle + Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
             <button
               type="button"
               aria-label="Open menu"
@@ -78,7 +78,7 @@ export function Header() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <Logo variant="header" />
+            <Logo variant="header" className="shrink-0" />
           </div>
 
           {/* Center: Search Bar on Desktop */}

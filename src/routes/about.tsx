@@ -78,7 +78,7 @@ function AboutPage() {
             </div>
             <h3 className="font-display text-lg font-bold text-ink">Reliable Delivery</h3>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Carefully packed shipments with flat ₹79 delivery across India and free shipping on orders over ₹999.
+              Carefully packed shipments with flat ₹99 delivery across India and free shipping on orders over ₹999.
             </p>
           </div>
         </div>

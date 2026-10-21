@@ -10,7 +10,7 @@ const items = [
   {
     icon: Truck,
     title: "Fast Delivery",
-    text: "Flat ₹79 shipping • Free over ₹999",
+    text: "Flat ₹99 shipping • FREE over ₹999",
   },
   {
     icon: ShieldCheck,
