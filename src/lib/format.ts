@@ -23,6 +23,8 @@ export function formatDateIST(value: string | Date | null | undefined) {
   }).format(new Date(value));
 }
 
+export const formatDate = formatDateIST;
+
 export function formatDayIST(value: string | Date | null | undefined) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("en-IN", {

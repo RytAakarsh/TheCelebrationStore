@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,6 +17,10 @@ import {
   Mail,
   User,
   Package,
+  RefreshCw,
+  RotateCcw,
+  ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { AdminPage, AdminLoading } from "@/components/admin/AdminLayout";
 import { SafeImage } from "@/components/shop/SafeImage";
@@ -24,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { inr, formatDateIST } from "@/lib/format";
 import { BRAND, ORDER_STATUSES, ORDER_STATUS_LABEL } from "@/lib/brand";
+import { adminReconcileTransaction, adminRefundPayment } from "@/lib/payu.functions";
 
 export const Route = createFileRoute("/admin/orders/$id")({
   component: OrderDetail,
@@ -44,6 +50,9 @@ function OrderDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const [printing, setPrinting] = useState(false);
+  const reconcileTx = useServerFn(adminReconcileTransaction);
+  const refundTx = useServerFn(adminRefundPayment);
+  const [reconciling, setReconciling] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "order", id],
@@ -276,33 +285,93 @@ function OrderDetail() {
 
           {/* Payment Status */}
           <section className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-3">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-gold" />
-              <h2 className="font-display text-base font-bold">Payment Details</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-gold" />
+                <h2 className="font-display text-base font-bold">Payment Details</h2>
+              </div>
+              {o.payment_method === "online" && (
+                <Badge variant="outline" className="bg-pink/10 text-pink border-pink/30 text-[10px]">
+                  PayU India
+                </Badge>
+              )}
             </div>
-            <div className="rounded-lg bg-secondary/60 p-3 text-sm">
+
+            <div className="rounded-lg bg-secondary/60 p-3 text-xs space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Method:</span>
-                <span className="font-bold uppercase">{o.payment_method}</span>
+                <span className="font-bold uppercase text-ink">{o.payment_method === "online" ? "Online (PayU)" : "Cash on Delivery (COD)"}</span>
               </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-muted-foreground">Current Status:</span>
-                <span className="font-bold capitalize">{o.payment_status}</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Payment Status:</span>
+                <span className={`font-bold capitalize px-2 py-0.5 rounded text-[11px] ${
+                  o.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" :
+                  o.payment_status === "failed" ? "bg-red-100 text-red-800" :
+                  o.payment_status === "refunded" ? "bg-purple-100 text-purple-800" : "bg-amber-100 text-amber-800"
+                }`}>
+                  {o.payment_status}
+                </span>
               </div>
+              {o.payment_ref && (
+                <div className="flex justify-between pt-1 border-t border-border/60">
+                  <span className="text-muted-foreground">Payment Ref:</span>
+                  <span className="font-mono text-ink text-[11px] select-all">{o.payment_ref}</span>
+                </div>
+              )}
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {["pending", "paid", "failed", "refunded"].map((s) => (
+
+            {o.payment_method === "online" && (
+              <div className="pt-2 flex flex-col gap-2">
                 <Button
-                  key={s}
+                  type="button"
+                  variant="outline"
                   size="sm"
-                  variant={o.payment_status === s ? "hero" : "outline"}
-                  disabled={update.isPending}
-                  onClick={() => update.mutate({ payment_status: s })}
-                  className="capitalize"
+                  disabled={reconciling}
+                  onClick={async () => {
+                    setReconciling(true);
+                    try {
+                      const txnid = o.payment_ref || `TCS_${o.id.replace(/-/g, "").slice(0, 18)}`;
+                      const res = await reconcileTx({ data: { txnid } });
+                      toast.success(`PayU: ${res.message} (Status: ${res.status})`);
+                      qc.invalidateQueries({ queryKey: ["admin", "order", id] });
+                      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+                    } catch (err: any) {
+                      toast.error(err.message || "Reconciliation failed");
+                    } finally {
+                      setReconciling(false);
+                    }
+                  }}
+                  className="w-full text-xs h-8"
                 >
-                  {s}
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${reconciling ? "animate-spin" : ""}`} />
+                  <span>Reconcile with PayU Live</span>
                 </Button>
-              ))}
+
+                <Button asChild variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-ink h-7">
+                  <Link to="/admin/payments" search={{ search: o.order_number }}>
+                    <span>View in Payment Ledger</span>
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-border">
+              <span className="text-[11px] text-muted-foreground block mb-1.5 font-medium">Manual Override:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {["pending", "paid", "failed", "refunded"].map((s) => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    variant={o.payment_status === s ? "hero" : "outline"}
+                    disabled={update.isPending}
+                    onClick={() => update.mutate({ payment_status: s })}
+                    className="capitalize text-xs h-7 px-2.5"
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
             </div>
           </section>
         </div>

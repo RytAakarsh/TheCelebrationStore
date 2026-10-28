@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Save, Store, Truck, CreditCard, Globe, Share2, PhoneCall, Sparkles, KeyRound, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Loader2, Save, Store, Truck, CreditCard, Globe, Share2, PhoneCall, Sparkles, KeyRound, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPage, AdminLoading } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { inr } from "@/lib/format";
 import { BRAND } from "@/lib/brand";
+import { getAdminPaymentSettings } from "@/lib/payu.functions";
 
 export const Route = createFileRoute("/admin/settings/")({
   component: AdminSettingsPage,
@@ -58,6 +60,12 @@ const DEFAULT_SETTINGS: SettingsForm = {
 function AdminSettingsPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState<SettingsForm>(DEFAULT_SETTINGS);
+
+  const fetchPayuSettings = useServerFn(getAdminPaymentSettings);
+  const { data: payuSettings, isLoading: loadingPayu, refetch: refetchPayu, isFetching: fetchingPayu } = useQuery({
+    queryKey: ["admin_payu_settings"],
+    queryFn: () => fetchPayuSettings(),
+  });
 
   // Password change state
   const [newPassword, setNewPassword] = useState("");
@@ -322,13 +330,94 @@ function AdminSettingsPage() {
 
             <div className="flex items-center justify-between rounded-xl border border-border p-4">
               <div>
-                <p className="font-semibold text-sm">Online Payments (UPI / Cards / Netbanking)</p>
-                <p className="text-xs text-muted-foreground">Accept digital payments via Razorpay / Gateway</p>
+                <p className="font-semibold text-sm">Online Payments (PayU India Hosted)</p>
+                <p className="text-xs text-muted-foreground">Accept UPI, Credit/Debit cards, Net Banking &amp; Wallets</p>
               </div>
               <Switch
                 checked={form.online_payment_enabled}
                 onCheckedChange={(val) => handleChange("online_payment_enabled", val)}
               />
+            </div>
+          </div>
+
+          {/* PayU Hosted Checkout Gateway Status Card */}
+          <div className="rounded-xl border border-pink/20 bg-pink/5 p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-pink/15 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-pink" />
+                <div>
+                  <h3 className="font-display text-sm font-bold text-ink">PayU India Hosted Checkout</h3>
+                  <p className="text-[11px] text-muted-foreground">Official checkout flow with SHA-512 dual hash verification &amp; webhook reconciliation</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                    payuSettings?.configured
+                      ? payuSettings.env === "live"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-blue-100 text-blue-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {payuSettings?.configured
+                    ? payuSettings.env === "live"
+                      ? "LIVE MODE"
+                      : "TEST MODE (Sandbox)"
+                    : "CONFIG PENDING"}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    refetchPayu();
+                    toast.success("PayU gateway status refreshed");
+                  }}
+                  disabled={fetchingPayu}
+                  className="h-7 text-xs px-2.5 rounded-lg"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1 ${fetchingPayu ? "animate-spin" : ""}`} />
+                  <span>Refresh</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 text-xs">
+              <div className="space-y-1 rounded-lg bg-card/80 p-3 border border-border/60">
+                <p className="text-muted-foreground font-medium">Merchant Key (Public)</p>
+                <p className="font-mono font-bold text-ink">{payuSettings?.merchantKey || "bEMOEW"}</p>
+                <p className="text-[10px] text-muted-foreground">Passed in checkout form request to PayU</p>
+              </div>
+
+              <div className="space-y-1 rounded-lg bg-card/80 p-3 border border-border/60">
+                <p className="text-muted-foreground font-medium">Merchant Salt &amp; Credentials</p>
+                <p className="font-mono font-bold text-emerald-700">
+                  {payuSettings?.hasSalt ? "●●●●●●●● (Secured on Server)" : "Not Configured"}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Protected on server, never exposed to client bundles</p>
+              </div>
+
+              <div className="space-y-1 rounded-lg bg-card/80 p-3 border border-border/60 sm:col-span-2">
+                <p className="text-muted-foreground font-medium">Customer Return URL (POST callback from PayU)</p>
+                <p className="font-mono text-ink text-[11px] select-all bg-secondary/50 p-1.5 rounded">
+                  {payuSettings?.returnUrl || "https://www.thecelebrationstore.in/api/payu/return"}
+                </p>
+              </div>
+
+              <div className="space-y-1 rounded-lg bg-card/80 p-3 border border-border/60 sm:col-span-2">
+                <p className="text-muted-foreground font-medium">Webhook / S2S Notification URL (PayU Dashboard Webhook)</p>
+                <p className="font-mono text-ink text-[11px] select-all bg-secondary/50 p-1.5 rounded">
+                  {payuSettings?.webhookUrl || "https://www.thecelebrationstore.in/api/payu/webhook"}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-pink/10 p-3 text-[11px] text-muted-foreground leading-relaxed flex items-start gap-2">
+              <Sparkles className="h-4 w-4 text-pink shrink-0 mt-0.5" />
+              <span>
+                To switch between <strong>Test Mode</strong> and <strong>Live Production</strong>, update <code>PAYU_ENV</code> in your environment variables. No code changes are required.
+              </span>
             </div>
           </div>
         </section>

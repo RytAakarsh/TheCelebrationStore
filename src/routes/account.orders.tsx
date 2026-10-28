@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SafeImage } from "@/components/shop/SafeImage";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateIST, inr } from "@/lib/format";
 import { ORDER_STATUS_LABEL, TRACK_STEPS, BRAND, whatsappLink } from "@/lib/brand";
-import { Package, Truck, CheckCircle2, Clock, MessageCircle, AlertCircle, Sparkles } from "lucide-react";
+import { Package, Truck, CheckCircle2, Clock, MessageCircle, AlertCircle, Sparkles, CreditCard, RotateCcw } from "lucide-react";
+import { retryPayuPayment } from "@/lib/payu.functions";
 
 export const Route = createFileRoute("/account/orders")({
   component: MyOrders,
@@ -26,6 +30,40 @@ function getStepIndex(status: string) {
 
 function MyOrders() {
   const { user } = useAuth();
+  const retryPayment = useServerFn(retryPayuPayment);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  async function handleRetry(orderId: string) {
+    setRetryingId(orderId);
+    try {
+      const checkoutResult = await retryPayment({
+        data: {
+          orderId,
+          origin: window.location.origin,
+        },
+      });
+
+      const formEl = document.createElement("form");
+      formEl.method = "POST";
+      formEl.action = checkoutResult.actionUrl;
+      formEl.style.display = "none";
+
+      Object.entries(checkoutResult.payuParams).forEach(([key, val]) => {
+        const inputEl = document.createElement("input");
+        inputEl.type = "hidden";
+        inputEl.name = key;
+        inputEl.value = val;
+        formEl.appendChild(inputEl);
+      });
+
+      document.body.appendChild(formEl);
+      formEl.submit();
+    } catch (err: any) {
+      toast.error(err.message || "Could not restart payment.");
+      setRetryingId(null);
+    }
+  }
+
   const { data, isLoading } = useQuery({
     queryKey: ["my-orders", user?.id],
     enabled: !!user,
@@ -92,7 +130,7 @@ function MyOrders() {
               {/* Order Header */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-display text-base sm:text-lg font-bold text-ink">
                       Order #{order.order_number}
                     </span>
@@ -105,14 +143,48 @@ function MyOrders() {
                     }`}>
                       {ORDER_STATUS_LABEL[order.status] ?? order.status}
                     </span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                      order.payment_status === "paid"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : order.payment_status === "failed"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {order.payment_method === "online"
+                        ? order.payment_status === "paid"
+                          ? "Paid Online (PayU)"
+                          : "Online Payment Pending"
+                        : "Cash on Delivery"}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Placed on {formatDateIST(order.created_at)} • Payment: {order.payment_method?.toUpperCase()} ({order.payment_status})
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Placed on {formatDateIST(order.created_at)}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button asChild size="sm" variant="outline" className="rounded-xl text-xs border-emerald-500/40 text-emerald-700 hover:bg-emerald-50">
+                  {order.payment_method === "online" && order.payment_status === "pending" && !isCancelled && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleRetry(order.id)}
+                      disabled={retryingId === order.id}
+                      className="rounded-xl text-xs bg-pink text-white hover:bg-pink/90 font-bold shadow-xs h-8"
+                    >
+                      {retryingId === order.id ? (
+                        <span className="flex items-center gap-1.5">
+                          <RotateCcw className="h-3 w-3 animate-spin" />
+                          <span>Connecting...</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <CreditCard className="h-3 w-3" />
+                          <span>Pay Now via PayU</span>
+                        </span>
+                      )}
+                    </Button>
+                  )}
+
+                  <Button asChild size="sm" variant="outline" className="rounded-xl text-xs border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 h-8">
                     <a
                       href={whatsappLink(`Hello ${BRAND.name}, I would like an update on Order #${order.order_number}.`)}
                       target="_blank"

@@ -44,9 +44,23 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+import { handlePayuReturn, handlePayuWebhook } from "./server/payu-handler";
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+
+      // Handle PayU Hosted Checkout Return Callback (both GET and POST supported)
+      if (url.pathname === "/api/payu/return") {
+        return await handlePayuReturn(request);
+      }
+
+      // Handle PayU Server-to-Server Webhook
+      if (url.pathname === "/api/payu/webhook") {
+        return await handlePayuWebhook(request);
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

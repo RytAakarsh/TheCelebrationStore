@@ -33,6 +33,7 @@ import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as CheckoutPaymentResultRouteImport } from './routes/checkout.payment-result'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as AdminAnalyticsIndexRouteImport } from './routes/admin.analytics.index'
 import { Route as AdminBannersIndexRouteImport } from './routes/admin.banners.index'
@@ -44,6 +45,7 @@ import { Route as AdminInventoryIndexRouteImport } from './routes/admin.inventor
 import { Route as AdminOffersIndexRouteImport } from './routes/admin.offers.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as AdminPaymentsIndexRouteImport } from './routes/admin.payments.index'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
 import { Route as AdminProductsIdRouteImport } from './routes/admin.products.$id'
 import { Route as AdminProductsNewRouteImport } from './routes/admin.products.new'
@@ -171,6 +173,11 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutPaymentResultRoute = CheckoutPaymentResultRouteImport.update({
+  id: '/payment-result',
+  path: '/payment-result',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 const ProductSlugRoute = ProductSlugRouteImport.update({
   id: '/product/$slug',
   path: '/product/$slug',
@@ -226,6 +233,11 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   path: '/orders/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPaymentsIndexRoute = AdminPaymentsIndexRouteImport.update({
+  id: '/payments/',
+  path: '/payments/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -261,7 +273,7 @@ export interface FileRoutesByFullPath {
   '/cancellation-refund-policy': typeof CancellationRefundPolicyRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/offers': typeof OffersRoute
@@ -275,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AccountOrdersRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/checkout/payment-result': typeof CheckoutPaymentResultRoute
   '/product/$slug': typeof ProductSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -290,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/admin/inventory/': typeof AdminInventoryIndexRoute
   '/admin/offers/': typeof AdminOffersIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
+  '/admin/payments/': typeof AdminPaymentsIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
   '/admin/reviews/': typeof AdminReviewsIndexRoute
   '/admin/settings/': typeof AdminSettingsIndexRoute
@@ -301,7 +315,7 @@ export interface FileRoutesByTo {
   '/cancellation-refund-policy': typeof CancellationRefundPolicyRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/offers': typeof OffersRoute
@@ -315,6 +329,7 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AccountOrdersRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/checkout/payment-result': typeof CheckoutPaymentResultRoute
   '/product/$slug': typeof ProductSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -330,6 +345,7 @@ export interface FileRoutesByTo {
   '/admin/inventory': typeof AdminInventoryIndexRoute
   '/admin/offers': typeof AdminOffersIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
+  '/admin/payments': typeof AdminPaymentsIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
   '/admin/reviews': typeof AdminReviewsIndexRoute
   '/admin/settings': typeof AdminSettingsIndexRoute
@@ -344,7 +360,7 @@ export interface FileRoutesById {
   '/cancellation-refund-policy': typeof CancellationRefundPolicyRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/offers': typeof OffersRoute
@@ -358,6 +374,7 @@ export interface FileRoutesById {
   '/account/orders': typeof AccountOrdersRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/checkout/payment-result': typeof CheckoutPaymentResultRoute
   '/product/$slug': typeof ProductSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -373,6 +390,7 @@ export interface FileRoutesById {
   '/admin/inventory/': typeof AdminInventoryIndexRoute
   '/admin/offers/': typeof AdminOffersIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
+  '/admin/payments/': typeof AdminPaymentsIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
   '/admin/reviews/': typeof AdminReviewsIndexRoute
   '/admin/settings/': typeof AdminSettingsIndexRoute
@@ -402,6 +420,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/admin/login'
     | '/category/$slug'
+    | '/checkout/payment-result'
     | '/product/$slug'
     | '/account/'
     | '/admin/'
@@ -417,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/inventory/'
     | '/admin/offers/'
     | '/admin/orders/'
+    | '/admin/payments/'
     | '/admin/products/'
     | '/admin/reviews/'
     | '/admin/settings/'
@@ -442,6 +462,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/admin/login'
     | '/category/$slug'
+    | '/checkout/payment-result'
     | '/product/$slug'
     | '/account'
     | '/admin'
@@ -457,6 +478,7 @@ export interface FileRouteTypes {
     | '/admin/inventory'
     | '/admin/offers'
     | '/admin/orders'
+    | '/admin/payments'
     | '/admin/products'
     | '/admin/reviews'
     | '/admin/settings'
@@ -484,6 +506,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/admin/login'
     | '/category/$slug'
+    | '/checkout/payment-result'
     | '/product/$slug'
     | '/account/'
     | '/admin/'
@@ -499,6 +522,7 @@ export interface FileRouteTypes {
     | '/admin/inventory/'
     | '/admin/offers/'
     | '/admin/orders/'
+    | '/admin/payments/'
     | '/admin/products/'
     | '/admin/reviews/'
     | '/admin/settings/'
@@ -513,7 +537,7 @@ export interface RootRouteChildren {
   CancellationRefundPolicyRoute: typeof CancellationRefundPolicyRoute
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
-  CheckoutRoute: typeof CheckoutRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   OffersRoute: typeof OffersRoute
@@ -698,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/payment-result': {
+      id: '/checkout/payment-result'
+      path: '/payment-result'
+      fullPath: '/checkout/payment-result'
+      preLoaderRoute: typeof CheckoutPaymentResultRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
     '/product/$slug': {
       id: '/product/$slug'
       path: '/product/$slug'
@@ -775,6 +806,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/payments/': {
+      id: '/admin/payments/'
+      path: '/payments'
+      fullPath: '/admin/payments/'
+      preLoaderRoute: typeof AdminPaymentsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/products/': {
       id: '/admin/products/'
       path: '/products'
@@ -841,6 +879,7 @@ interface AdminRouteChildren {
   AdminInventoryIndexRoute: typeof AdminInventoryIndexRoute
   AdminOffersIndexRoute: typeof AdminOffersIndexRoute
   AdminOrdersIndexRoute: typeof AdminOrdersIndexRoute
+  AdminPaymentsIndexRoute: typeof AdminPaymentsIndexRoute
   AdminProductsIndexRoute: typeof AdminProductsIndexRoute
   AdminReviewsIndexRoute: typeof AdminReviewsIndexRoute
   AdminSettingsIndexRoute: typeof AdminSettingsIndexRoute
@@ -861,12 +900,25 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInventoryIndexRoute: AdminInventoryIndexRoute,
   AdminOffersIndexRoute: AdminOffersIndexRoute,
   AdminOrdersIndexRoute: AdminOrdersIndexRoute,
+  AdminPaymentsIndexRoute: AdminPaymentsIndexRoute,
   AdminProductsIndexRoute: AdminProductsIndexRoute,
   AdminReviewsIndexRoute: AdminReviewsIndexRoute,
   AdminSettingsIndexRoute: AdminSettingsIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface CheckoutRouteChildren {
+  CheckoutPaymentResultRoute: typeof CheckoutPaymentResultRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutPaymentResultRoute: CheckoutPaymentResultRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -877,7 +929,7 @@ const rootRouteChildren: RootRouteChildren = {
   CancellationRefundPolicyRoute: CancellationRefundPolicyRoute,
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
-  CheckoutRoute: CheckoutRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   OffersRoute: OffersRoute,

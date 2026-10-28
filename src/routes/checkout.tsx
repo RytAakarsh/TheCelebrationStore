@@ -11,6 +11,7 @@ import { ShopLayout, PageHeader, EmptyState } from "@/components/shop/ShopLayout
 import { useAuth } from "@/hooks/useAuth";
 import { useCart, cartLinePrice } from "@/hooks/useCart";
 import { placeOrder } from "@/lib/orders.functions";
+import { initiatePayuCheckout } from "@/lib/payu.functions";
 import { inr, isValidIndianPhone, isValidPincode } from "@/lib/format";
 import { BRAND } from "@/lib/brand";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,9 +38,11 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const submitOrder = useServerFn(placeOrder);
+  const startPayuCheckout = useServerFn(initiatePayuCheckout);
 
   const [busy, setBusy] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
+  const [redirectingToPayu, setRedirectingToPayu] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("online");
   const [couponCode, setCouponCode] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -191,20 +194,52 @@ function CheckoutPage() {
         }
       }
 
+      const addressPayload = {
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        house: form.house.trim(),
+        street: form.street.trim(),
+        area: form.area.trim(),
+        landmark: form.landmark.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        pincode: form.pincode.trim(),
+      };
+
+      if (paymentMethod === "online") {
+        setRedirectingToPayu(true);
+        const checkoutResult = await startPayuCheckout({
+          data: {
+            address: addressPayload,
+            couponCode: couponCode.trim() || null,
+            notes: notes.trim() || null,
+            origin: window.location.origin,
+          },
+        });
+
+        // PayU India Hosted Checkout requires dynamic form POST
+        const formEl = document.createElement("form");
+        formEl.method = "POST";
+        formEl.action = checkoutResult.actionUrl;
+        formEl.style.display = "none";
+
+        Object.entries(checkoutResult.payuParams).forEach(([key, val]) => {
+          const inputEl = document.createElement("input");
+          inputEl.type = "hidden";
+          inputEl.name = key;
+          inputEl.value = val;
+          formEl.appendChild(inputEl);
+        });
+
+        document.body.appendChild(formEl);
+        formEl.submit();
+        return;
+      }
+
       const result = await submitOrder({
         data: {
-          address: {
-            full_name: form.full_name.trim(),
-            phone: form.phone.trim(),
-            house: form.house.trim(),
-            street: form.street.trim(),
-            area: form.area.trim(),
-            landmark: form.landmark.trim(),
-            city: form.city.trim(),
-            state: form.state.trim(),
-            pincode: form.pincode.trim(),
-          },
-          paymentMethod,
+          address: addressPayload,
+          paymentMethod: "cod",
           couponCode: couponCode.trim() || null,
           notes: notes.trim() || null,
         },
@@ -216,6 +251,7 @@ function CheckoutPage() {
       toast.success(`Celebration Order #${result.orderNumber} placed successfully! 🎉`);
       navigate({ to: "/account/orders" });
     } catch (err: any) {
+      setRedirectingToPayu(false);
       toast.error(err.message || "Failed to place order. Please try again.");
     } finally {
       setBusy(false);
@@ -432,38 +468,21 @@ function CheckoutPage() {
 
           {/* Payment Method Box */}
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h2 className="font-display text-xl font-bold text-ink flex items-center gap-2">
-              <Banknote className="h-5 w-5 text-gold" />
-              <span>2. Payment Option</span>
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-bold text-ink flex items-center gap-2">
+                <Banknote className="h-5 w-5 text-gold" />
+                <span>2. Payment Option</span>
+              </h2>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                100% Encrypted &amp; Secure
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
-                onClick={() => setPaymentMethod("cod")}
-                className={`cursor-pointer rounded-2xl border-2 p-4 flex items-start gap-3 transition-all ${
-                  paymentMethod === "cod" ? "border-gold bg-gold/10" : "border-border bg-card hover:border-gold/40"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  id="pay-cod"
-                  checked={paymentMethod === "cod"}
-                  onChange={() => setPaymentMethod("cod")}
-                  className="mt-1 accent-gold"
-                />
-                <div>
-                  <Label htmlFor="pay-cod" className="cursor-pointer font-bold text-ink text-sm">
-                    Cash on Delivery (COD)
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Pay in cash or UPI when your parcel arrives.</p>
-                </div>
-              </div>
-
-              <div
                 onClick={() => setPaymentMethod("online")}
                 className={`cursor-pointer rounded-2xl border-2 p-4 flex items-start gap-3 transition-all ${
-                  paymentMethod === "online" ? "border-pink bg-pink/10" : "border-border bg-card hover:border-pink/40"
+                  paymentMethod === "online" ? "border-pink bg-pink/10 shadow-sm" : "border-border bg-card hover:border-pink/40"
                 }`}
               >
                 <input
@@ -474,11 +493,42 @@ function CheckoutPage() {
                   onChange={() => setPaymentMethod("online")}
                   className="mt-1 accent-pink"
                 />
-                <div>
-                  <Label htmlFor="pay-online" className="cursor-pointer font-bold text-ink text-sm flex items-center gap-1.5">
-                    <span>UPI / Cards / Net Banking</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="pay-online" className="cursor-pointer font-bold text-ink text-sm flex items-center gap-1.5">
+                      <CreditCard className="h-4 w-4 text-pink" />
+                      <span>Online Payment (PayU)</span>
+                    </Label>
+                    <span className="text-[10px] bg-pink/20 text-pink font-bold px-2 py-0.5 rounded-full">Recommended</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    UPI (Google Pay, PhonePe, Paytm), RuPay / Visa / Mastercard, Net Banking &amp; Wallets via PayU.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setPaymentMethod("cod")}
+                className={`cursor-pointer rounded-2xl border-2 p-4 flex items-start gap-3 transition-all ${
+                  paymentMethod === "cod" ? "border-gold bg-gold/10 shadow-sm" : "border-border bg-card hover:border-gold/40"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  id="pay-cod"
+                  checked={paymentMethod === "cod"}
+                  onChange={() => setPaymentMethod("cod")}
+                  className="mt-1 accent-gold"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="pay-cod" className="cursor-pointer font-bold text-ink text-sm flex items-center gap-1.5">
+                    <Banknote className="h-4 w-4 text-gold" />
+                    <span>Cash on Delivery (COD)</span>
                   </Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Secure payment via Razorpay / UPI QR.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Pay in cash or UPI to the delivery courier when your celebration box arrives.
+                  </p>
                 </div>
               </div>
             </div>
@@ -539,13 +589,20 @@ function CheckoutPage() {
             className="w-full rounded-2xl bg-pink text-white hover:bg-pink/90 font-bold shadow-pink text-sm h-12"
             size="lg"
           >
-            {busy ? (
+            {redirectingToPayu ? (
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 animate-spin" />
+                <span>Redirecting to PayU Secure Payment...</span>
+              </span>
+            ) : busy ? (
               <span className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 animate-spin" />
                 <span>Processing Order...</span>
               </span>
+            ) : paymentMethod === "online" ? (
+              <span>Proceed to PayU Payment • {inr(grandTotal)}</span>
             ) : (
-              <span>Place Celebration Order • {inr(grandTotal)}</span>
+              <span>Confirm Cash on Delivery Order • {inr(grandTotal)}</span>
             )}
           </Button>
 
