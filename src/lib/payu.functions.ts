@@ -150,35 +150,58 @@ export const initiatePayuCheckout = createServerFn({ method: "POST" })
     const { data: profile } = await supabase.from("profiles").select("email").eq("id", userId).maybeSingle();
     const customerEmail = profile?.email || "customer@thecelebrationstore.in";
 
-    // 6. Create or retrieve pending order
-    const { data: order, error: orderError } = await serviceSupabase
+    // 6. Create order using customer's authenticated client (satisfies RLS user_id = auth.uid())
+    // with serviceSupabase fallback
+    const orderPayload = {
+      user_id: userId,
+      customer_name: data.address.full_name,
+      phone: data.address.phone,
+      email: customerEmail,
+      address: data.address,
+      subtotal: Math.round(subtotal * 100) / 100,
+      discount: Math.round(discount * 100) / 100,
+      coupon_code: couponCode,
+      shipping,
+      tax: 0,
+      total,
+      payment_method: "online" as const,
+      payment_status: "pending" as const,
+      status: "pending" as const,
+      notes: data.notes ?? null,
+    };
+
+    let { data: order, error: orderError } = await supabase
       .from("orders")
-      .insert({
-        user_id: userId,
-        customer_name: data.address.full_name,
-        phone: data.address.phone,
-        email: customerEmail,
-        address: data.address,
-        subtotal: Math.round(subtotal * 100) / 100,
-        discount: Math.round(discount * 100) / 100,
-        coupon_code: couponCode,
-        shipping,
-        tax: 0,
-        total,
-        payment_method: "online",
-        payment_status: "pending",
-        status: "pending",
-        notes: data.notes ?? null,
-      })
+      .insert(orderPayload)
       .select("id,order_number")
       .single();
 
-    if (orderError) throw new Error(orderError.message);
+    if (orderError) {
+      console.warn("[PayU] Order insert via user client failed, retrying via service client:", orderError.message);
+      const res = await serviceSupabase
+        .from("orders")
+        .insert(orderPayload)
+        .select("id,order_number")
+        .single();
+      order = res.data;
+      orderError = res.error;
+    }
+
+    if (orderError || !order) throw new Error(orderError?.message || "Failed to create order");
 
     // Insert order line items
-    const { error: itemsError } = await serviceSupabase
+    let { error: itemsError } = await supabase
       .from("order_items")
       .insert(items.map((i) => ({ ...i, order_id: order.id })));
+
+    if (itemsError) {
+      console.warn("[PayU] Order items insert via user client failed, retrying via service client:", itemsError.message);
+      const res = await serviceSupabase
+        .from("order_items")
+        .insert(items.map((i) => ({ ...i, order_id: order.id })));
+      itemsError = res.error;
+    }
+
     if (itemsError) throw new Error(itemsError.message);
 
     // 7. Generate PayU Hosted Checkout parameters

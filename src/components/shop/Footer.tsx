@@ -223,10 +223,13 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Footer Bottom Bar with Managed by MightBeMedia */}
-      <div className="border-t border-white/10 bg-black/30 py-5 text-xs text-cream/70">
-        <div className="container-page flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-          <p>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</p>
+      {/* Footer Bottom Bar with Legal Operating Entity & Managed by MightBeMedia */}
+      <div className="border-t border-white/10 bg-black/30 py-6 text-xs text-cream/70">
+        <div className="container-page flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <div className="space-y-1">
+            <p className="font-semibold text-cream/90">Operated by Packingsnpacking</p>
+            <p className="text-cream/70">© 2026 Packingsnpacking. All rights reserved.</p>
+          </div>
 
           <div className="flex items-center gap-1.5 text-xs text-cream/80">
             <span>Managed By</span>

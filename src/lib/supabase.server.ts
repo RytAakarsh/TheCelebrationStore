@@ -17,11 +17,7 @@ export function getServiceSupabase() {
   const key =
     (typeof process !== "undefined" && process.env?.SUPABASE_SERVICE_ROLE_KEY) ||
     cfEnv?.SUPABASE_SERVICE_ROLE_KEY ||
-    (typeof process !== "undefined" && (process.env?.SUPABASE_PUBLISHABLE_KEY || process.env?.VITE_SUPABASE_PUBLISHABLE_KEY)) ||
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY) ||
-    cfEnv?.SUPABASE_PUBLISHABLE_KEY ||
-    cfEnv?.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    "sb_publishable_KZlJvSQBrBds76bSb0o0OA_R4pb3mWh";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qYnRsY2R5a251d3dsdHVuZmlzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjIzNjg0NCwiZXhwIjoyMTA3ODEyODQ0fQ.w22WDa4vKDwP1mzNVBaeTAhHwHzMELZUL812vjEXk6E";
 
   serviceClient = createClient<Database>(url, key, {
     auth: {

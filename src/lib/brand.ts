@@ -1,6 +1,9 @@
 export const BRAND = {
   name: "The Celebration Store",
   tagline: "Make Every Moment Special",
+  legalName: "Packingsnpacking",
+  operatedBy: "Operated by Packingsnpacking",
+  copyright: "© 2026 Packingsnpacking. All rights reserved.",
   about:
     "Welcome to The Celebration Store — your one-stop destination for making every celebration extra special! From beautiful balloons and party decorations to German silver return gifts and unique celebration essentials, we have everything you need to make your occasions memorable. Whether it’s a birthday, anniversary, baby shower, wedding, or any special event, we’re here to add more colour, joy, and happiness to your celebrations.",
   email: "thecelebrationstore@gmail.com",

@@ -13,7 +13,7 @@ import { BRAND, whatsappLink } from "@/lib/brand";
 import { useAuth } from "@/hooks/useAuth";
 import { getSavedAuthRedirect, clearAuthRedirect } from "@/lib/authRedirect";
 import { getGuestCart } from "@/hooks/useCart";
-import { Sparkles, Gift, ArrowRight, MessageCircle, MapPin, PartyPopper } from "lucide-react";
+import { Sparkles, MessageCircle, MapPin, PartyPopper } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -110,60 +110,7 @@ function Home() {
         viewAllTo={{ to: "/shop" }}
       />
 
-      {/* Curated Celebration Showcase Banners */}
-      <section className="container-page py-6 sm:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {/* Banner 1: Return Gifts Boutique */}
-          <div className="relative overflow-hidden rounded-3xl surface-navy p-6 sm:p-9 text-white flex flex-col justify-between shadow-lift border border-gold/30 group">
-            <div className="relative z-10">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gold border border-gold/30">
-                <Gift className="h-3.5 w-3.5" /> Return Gifts Boutique
-              </span>
-              <h3 className="mt-4 font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                German Silver &amp; Traditional Gifts
-              </h3>
-              <p className="mt-2.5 text-xs sm:text-sm text-cream/85 max-w-md leading-relaxed">
-                Make your guests remember your special moments forever with authentic German silver plates, bowls, kumkum boxes, and curated celebration favor boxes.
-              </p>
-            </div>
-            <div className="mt-6 relative z-10">
-              <Button asChild variant="gold" size="lg" className="rounded-full">
-                <Link to="/category/$slug" params={{ slug: "return-gifts" }}>
-                  <span>Explore Return Gifts</span>
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            {/* Background Glow */}
-            <div className="pointer-events-none absolute -right-12 -bottom-12 h-64 w-64 rounded-full bg-gold/15 blur-3xl transition-transform duration-500 group-hover:scale-110" />
-          </div>
 
-          {/* Banner 2: Party & Birthday Decor */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#201018] via-[#2A1420] to-[#120810] p-6 sm:p-9 text-white flex flex-col justify-between shadow-lift border border-coral/30 group">
-            <div className="relative z-10">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-coral/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-coral border border-coral/30">
-                <Sparkles className="h-3.5 w-3.5" /> Party &amp; Birthday
-              </span>
-              <h3 className="mt-4 font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Balloons, Kits &amp; Event Decor
-              </h3>
-              <p className="mt-2.5 text-xs sm:text-sm text-cream/85 max-w-md leading-relaxed">
-                Chrome balloons, arch stands, foil curtains, sparklers, and photo backdrops to turn any room into an extraordinary celebration.
-              </p>
-            </div>
-            <div className="mt-6 relative z-10">
-              <Button asChild variant="coral" size="lg" className="rounded-full">
-                <Link to="/category/$slug" params={{ slug: "birthday-party" }}>
-                  <span>Shop Birthday Supplies</span>
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            {/* Background Glow */}
-            <div className="pointer-events-none absolute -right-12 -bottom-12 h-64 w-64 rounded-full bg-coral/15 blur-3xl transition-transform duration-500 group-hover:scale-110" />
-          </div>
-        </div>
-      </section>
 
       {/* Birthday & Party Showcase */}
       {birthdayParty.data && birthdayParty.data.length > 0 && (
