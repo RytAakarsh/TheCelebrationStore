@@ -30,8 +30,17 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = process.env['SUPABASE_URL'];
-  const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  const cfEnv = (globalThis as any).__CLOUDFLARE_ENV__;
+  const SUPABASE_URL =
+    (typeof process !== 'undefined' && (process.env?.['SUPABASE_URL'] || process.env?.['VITE_SUPABASE_URL'])) ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.['VITE_SUPABASE_URL']) ||
+    cfEnv?.['SUPABASE_URL'] ||
+    cfEnv?.['VITE_SUPABASE_URL'] ||
+    'https://njbtlcdyknuwwltunfis.supabase.co';
+
+  const SUPABASE_SERVICE_ROLE_KEY =
+    (typeof process !== 'undefined' && process.env?.['SUPABASE_SERVICE_ROLE_KEY']) ||
+    cfEnv?.['SUPABASE_SERVICE_ROLE_KEY'];
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [

@@ -46,8 +46,49 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 import { handlePayuReturn, handlePayuWebhook } from "./server/payu-handler";
 
+export function syncCloudflareEnv(env: unknown) {
+  if (!env || typeof env !== "object") return;
+  (globalThis as any).__CLOUDFLARE_ENV__ = env;
+
+  if (typeof globalThis.process === "undefined") {
+    (globalThis as any).process = { env: {} };
+  } else if (!globalThis.process.env) {
+    globalThis.process.env = {};
+  }
+
+  for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
+    if (typeof value === "string") {
+      try {
+        process.env[key] = value;
+      } catch {
+        // Safe against frozen properties
+      }
+    }
+  }
+
+  // Cross-populate aliases so both standard and VITE_ prefixed keys are available
+  const p = process.env;
+  if (!p.SUPABASE_URL && p.VITE_SUPABASE_URL) p.SUPABASE_URL = p.VITE_SUPABASE_URL;
+  if (!p.VITE_SUPABASE_URL && p.SUPABASE_URL) p.VITE_SUPABASE_URL = p.SUPABASE_URL;
+
+  if (!p.SUPABASE_PUBLISHABLE_KEY && p.VITE_SUPABASE_PUBLISHABLE_KEY) {
+    p.SUPABASE_PUBLISHABLE_KEY = p.VITE_SUPABASE_PUBLISHABLE_KEY;
+  }
+  if (!p.VITE_SUPABASE_PUBLISHABLE_KEY && p.SUPABASE_PUBLISHABLE_KEY) {
+    p.VITE_SUPABASE_PUBLISHABLE_KEY = p.SUPABASE_PUBLISHABLE_KEY;
+  }
+
+  if (!p.SUPABASE_PROJECT_ID && p.VITE_SUPABASE_PROJECT_ID) {
+    p.SUPABASE_PROJECT_ID = p.VITE_SUPABASE_PROJECT_ID;
+  }
+  if (!p.VITE_SUPABASE_PROJECT_ID && p.SUPABASE_PROJECT_ID) {
+    p.VITE_SUPABASE_PROJECT_ID = p.SUPABASE_PROJECT_ID;
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    syncCloudflareEnv(env);
     try {
       const url = new URL(request.url);
 

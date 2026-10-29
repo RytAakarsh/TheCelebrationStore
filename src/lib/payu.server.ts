@@ -17,17 +17,18 @@ export interface PayuConfig {
  * Salt and private secrets are strictly kept on the server and never returned to the client.
  */
 export function getPayuConfig(): PayuConfig {
+  const cfEnv = (globalThis as any).__CLOUDFLARE_ENV__;
   const env: PayuEnvironment =
-    process.env.PAYU_ENV === "live" ? "live" : "test";
+    process.env.PAYU_ENV === "live" || cfEnv?.PAYU_ENV === "live" ? "live" : "test";
 
   const merchantKey =
-    process.env.PAYU_MERCHANT_KEY || "bEMOEW";
+    process.env.PAYU_MERCHANT_KEY || cfEnv?.PAYU_MERCHANT_KEY || "bEMOEW";
 
   const merchantSalt =
-    process.env.PAYU_MERCHANT_SALT || "3mBPU94YU3fis5VLShZ5F7sO422Ya32E";
+    process.env.PAYU_MERCHANT_SALT || cfEnv?.PAYU_MERCHANT_SALT || "3mBPU94YU3fis5VLShZ5F7sO422Ya32E";
 
-  const clientId = process.env.PAYU_CLIENT_ID || undefined;
-  const clientSecret = process.env.PAYU_CLIENT_SECRET || undefined;
+  const clientId = process.env.PAYU_CLIENT_ID || cfEnv?.PAYU_CLIENT_ID || undefined;
+  const clientSecret = process.env.PAYU_CLIENT_SECRET || cfEnv?.PAYU_CLIENT_SECRET || undefined;
 
   const isLive = env === "live";
 
